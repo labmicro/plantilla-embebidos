@@ -65,17 +65,18 @@
 #define LED_B_GPIO 5
 #define LED_B_BIT 2
 
+// Esta led_1_gpio y led_1_bit invertido con led_2_gpio y led_2_bit respectivamente
 #define LED_1_PORT 2
 #define LED_1_PIN 10
 #define LED_1_FUNC SCU_MODE_FUNC0
-#define LED_1_GPIO 0
-#define LED_1_BIT 14
+#define LED_1_GPIO 1
+#define LED_1_BIT 11
 
 #define LED_2_PORT 2
 #define LED_2_PIN 11
 #define LED_2_FUNC SCU_MODE_FUNC0
-#define LED_2_GPIO 1
-#define LED_2_BIT 11
+#define LED_2_GPIO 0
+#define LED_2_BIT 14
 
 #define LED_3_PORT 2
 #define LED_3_PIN 12
@@ -122,7 +123,10 @@
 /* === Public function implementation ========================================================== */
 
 int main(void) {
+  digital_output_t led_rojo;
+  digital_output_t led_azul;
   digital_output_t led_verde;
+  digital_output_t led_amarillo;
 
   int divisor = 0;
   bool current_state, last_state = false;
@@ -136,22 +140,16 @@ int main(void) {
   Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, LED_G_GPIO, LED_G_BIT, true);
 
   Chip_SCU_PinMuxSet(LED_B_PORT, LED_B_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_B_FUNC);
-  Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_B_GPIO, LED_B_BIT, false);
-  Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, LED_B_GPIO, LED_B_BIT, true);
+  led_azul = DigitalOutputCreate(LED_B_GPIO,LED_B_BIT);
 
   /******************/
   Chip_SCU_PinMuxSet(LED_1_PORT, LED_1_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_1_FUNC);
-  Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_1_GPIO, LED_1_BIT, false);
-  Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, LED_1_GPIO, LED_1_BIT, true);
+  led_rojo = DigitalOutputCreate(LED_1_GPIO,LED_1_BIT);
 
   Chip_SCU_PinMuxSet(LED_2_PORT, LED_2_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_2_FUNC);
-  Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_2_GPIO, LED_2_BIT, false);
-  Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, LED_2_GPIO, LED_2_BIT, true);
+  led_amarillo = DigitalOutputCreate(LED_2_GPIO,LED_2_BIT);
 
   Chip_SCU_PinMuxSet(LED_3_PORT, LED_3_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_3_FUNC);
-  Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_3_GPIO, LED_3_BIT, false);
-  Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, LED_3_GPIO, LED_3_BIT, true);
-
   led_verde = DigitalOutputCreate(LED_3_GPIO, LED_3_BIT);
 
   /******************/
@@ -169,22 +167,22 @@ int main(void) {
 
   while (true) {
     if (Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, TEC_1_GPIO, TEC_1_BIT) == 0) {
-      Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_B_GPIO, LED_B_BIT, true);
+      DigitalOutputActivate(led_azul);
     } else {
-      Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_B_GPIO, LED_B_BIT, false);
+      DigitalOutputDeactivate(led_azul);
     }
 
     current_state = (Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, TEC_2_GPIO, TEC_2_BIT) == 0);
     if ((current_state) && (!last_state)) {
-      Chip_GPIO_SetPinToggle(LPC_GPIO_PORT, LED_1_GPIO, LED_1_BIT);
+      DigitalOutputToggle(led_amarillo);
     }
     last_state = current_state;
 
     if (Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, TEC_3_GPIO, TEC_3_BIT) == 0) {
-      Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_2_GPIO, LED_2_BIT, true);
+      DigitalOutputActivate(led_rojo);
     }
     if (Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, TEC_4_GPIO, TEC_4_BIT) == 0) {
-      Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_2_GPIO, LED_2_BIT, false);
+      DigitalOutputDeactivate(led_rojo);
     }
 
     divisor++;
