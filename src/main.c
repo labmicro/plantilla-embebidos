@@ -174,8 +174,7 @@ int main(void) {
       Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_B_GPIO, LED_B_BIT, false);
     }
 
-    current_state =
-        (Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, TEC_2_GPIO, TEC_2_BIT) == 0);
+    current_state = (Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, TEC_2_GPIO, TEC_2_BIT) == 0);
     if ((current_state) && (!last_state)) {
       Chip_GPIO_SetPinToggle(LPC_GPIO_PORT, LED_1_GPIO, LED_1_BIT);
     }
@@ -191,7 +190,7 @@ int main(void) {
     divisor++;
     if (divisor == 5) {
       divisor = 0;
-        DigitalOutputToggle(led_verde);
+      DigitalOutputToggle(led_verde);
     }
 
     for (int index = 0; index < 100; index++) {
