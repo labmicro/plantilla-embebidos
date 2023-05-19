@@ -23,19 +23,21 @@
 
 /*---  Private Data Declaration  --------------------------------------------------------------- */
 
+//! Estructura que almacena el descriptor de una salida
 struct digital_output_s{
-    uint8_t port;
-    uint8_t pin;
-    bool inverted:1;
-    bool allocated:1;
+    uint8_t port;       //!< Puerto GPIO de la salida
+    uint8_t pin;        //!< Terminal del puerto GPIO de la salida
+    bool inverted:1;    //!< Indicador si opera con logica invertida
+    bool allocated:1;   //!< Flag indicador si se esta usando el descriptor
 };
 
-struct digital_input_s{
-    uint8_t port;
-    uint8_t pin;
-    bool inverted:1;
-    bool allocated:1;
-    bool last_state:1;
+//! Estructura que almacena el descriptor de una entrada
+struct digital_input_s{     
+    uint8_t port;       //!< Puerto GPIO de la entrada
+    uint8_t pin;        //!< Terminal del puerto GPIO de la entrada
+    bool inverted:1;    //!< Indicador si opera con logica invertida
+    bool allocated:1;   //!< Flag indicador si se esta usando el descriptor
+    bool last_state:1;  //!< Flag que almacena el ultimo estado de la entrada
 };
 
 /*---  Public Data Declaration  ---------------------------------------------------------------- */
@@ -54,6 +56,11 @@ struct digital_input_s{
 
 /*---  Private Function Implementation  -------------------------------------------------------- */
 
+/**
+ * @brief Funcion para alocar una instanciacion del descriptor de salida
+ * 
+ * @return digital_output_t Puntero al descriptor de salida
+ */
 digital_output_t DigitalOutputAllocate (void) {
     digital_output_t output = NULL;
 
@@ -70,6 +77,11 @@ digital_output_t DigitalOutputAllocate (void) {
     return output;
 }
 
+/**
+ * @brief Funcion para alocar una instanciacion del descriptor de entrada
+ * 
+ * @return digital_input_t Puntero al descriptor de entrada
+ */
 digital_input_t DigitalInputAllocate (void) {
     digital_input_t input = NULL;
 

@@ -5,9 +5,16 @@
 Plantilla de proyectos para trabajos prácticos de Sistemas Embebidos.
 
 **Table of Contents**
-
+- [Proyecto](#proyecto)
 - [Forma de uso](#forma-de-uso)
 - [License](#license)
+
+## Proyecto
+
+Creacion de capas de abstraccion a partir de un repositorio base.
+- Separacion de la parte digital (digital) y del hardware (bsp)
+- Implementacion con POO de dicha separacion
+- Documentacion del proyecto (no funciona el comando make doc)
 
 ## Forma de uso
 
