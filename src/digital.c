@@ -5,10 +5,11 @@
 // Project: Abstraction functions layer. Include inputs and outputs in edu-ciaa-nxp.
 /*---------------------------------------------------------------------------------------------- */
 
-#include "digital.h"
-#include "chip.h"
+
 
 /*---  Includes  ------------------------------------------------------------------------------- */
+#include "digital.h"
+#include "chip.h"
 
 /*---  Macros and Definitions  ----------------------------------------------------------------- */
 

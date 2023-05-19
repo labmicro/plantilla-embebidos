@@ -2,16 +2,19 @@
 // Autor: Jassan, Joel
 // Date: 
 //
+// Header: Abstraction functions layer declaration
 /*---------------------------------------------------------------------------------------------- */
 
-#include <stdbool.h>
-#include <stdint.h>
+
 
 #ifndef DIGITAL_H
 #define DIGITAL_H
 
 
 /*---  Includes  ------------------------------------------------------------------------------- */
+
+#include <stdbool.h>
+#include <stdint.h>
 
 /*---  Macros  --------------------------------------------------------------------------------- */
 typedef struct digital_output_s * digital_output_t;
