@@ -130,6 +130,8 @@ int main(void) {
   digital_output_t led_verde;
   digital_output_t led_amarillo;
 
+  digital_input_t tec_1;
+
   int divisor = 0;
   bool current_state, last_state = false;
 
@@ -154,7 +156,8 @@ int main(void) {
 
   /******************/
   Chip_SCU_PinMuxSet(TEC_1_PORT, TEC_1_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | TEC_1_FUNC);
-  Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, TEC_1_GPIO, TEC_1_BIT, false);
+  tec_1 = DigitalInputCreate(TEC_1_GPIO, TEC_1_BIT);
+  //Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, TEC_1_GPIO, TEC_1_BIT, false);
 
   Chip_SCU_PinMuxSet(TEC_2_PORT, TEC_2_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | TEC_2_FUNC);
   Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, TEC_2_GPIO, TEC_2_BIT, false);
@@ -166,7 +169,8 @@ int main(void) {
   Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, TEC_4_GPIO, TEC_4_BIT, false);
 
   while (true) {
-    if (Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, TEC_1_GPIO, TEC_1_BIT) == 0) {
+    if (!DigitalInputRead(tec_1)){
+    //if (Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, TEC_1_GPIO, TEC_1_BIT) == 0) {
       DigitalOutputActivate(led_RGB_rojo);
       DigitalOutputActivate(led_RGB_verde);
       DigitalOutputActivate(led_RGB_azul);

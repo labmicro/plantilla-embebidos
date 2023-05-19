@@ -12,7 +12,11 @@
 /*---  Macros and Definitions  ----------------------------------------------------------------- */
 
 #ifndef OUTPUT_INSTANCES
-    #define OUTPUT_INSTANCES 4
+    #define OUTPUT_INSTANCES 6
+#endif
+
+#ifndef INPUT_INSTANCES
+    #define INPUT_INSTANCES 4
 #endif
 
 /*---  Private Data Declaration  --------------------------------------------------------------- */
@@ -21,6 +25,11 @@ struct digital_output_s{
     uint8_t port;
     uint8_t pin;
     bool allocated;
+};
+
+struct digital_input_s{
+    uint8_t port;
+    uint8_t pin;
 };
 
 /*---  Public Data Declaration  ---------------------------------------------------------------- */
@@ -55,9 +64,9 @@ digital_output_t DigitalOutputAllocate (void) {
     return output;
 }
 
-
 /*---  Public Function Implementation  --------------------------------------------------------- */
 
+// Soporte de Salidas
 digital_output_t DigitalOutputCreate(uint8_t port, uint8_t pin){
     digital_output_t output = DigitalOutputAllocate();
 
@@ -81,4 +90,20 @@ void DigitalOutputDeactivate (digital_output_t output){
 
 void DigitalOutputToggle (digital_output_t output){
     Chip_GPIO_SetPinToggle(LPC_GPIO_PORT, output->port, output->pin);
+}
+
+
+// Soporte de Entradas
+digital_input_t DigitalInputCreate(uint8_t port, uint8_t pin){
+    static struct digital_input_s input;
+
+    input.port = port;
+    input.pin = pin;
+    Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, input.port, input.pin, false);
+    
+    return &input;
+}
+
+bool DigitalInputRead(digital_input_t input) {
+    return Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, input->port, input->pin);
 }
