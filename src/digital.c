@@ -30,6 +30,7 @@ struct digital_output_s{
 struct digital_input_s{
     uint8_t port;
     uint8_t pin;
+    bool allocated;
 };
 
 /*---  Public Data Declaration  ---------------------------------------------------------------- */
@@ -64,6 +65,22 @@ digital_output_t DigitalOutputAllocate (void) {
     return output;
 }
 
+digital_input_t DigitalInputAllocate (void) {
+    digital_input_t input = NULL;
+
+    static struct digital_input_s instances[INPUT_INSTANCES] = {0};
+
+    for(int index = 0; index < INPUT_INSTANCES; index++) {
+        if (!instances[index].allocated) {
+            instances[index].allocated = true;
+            input = &instances[index];
+            break;
+        }
+    }
+
+    return input;
+}
+
 /*---  Public Function Implementation  --------------------------------------------------------- */
 
 // Soporte de Salidas
@@ -95,13 +112,15 @@ void DigitalOutputToggle (digital_output_t output){
 
 // Soporte de Entradas
 digital_input_t DigitalInputCreate(uint8_t port, uint8_t pin){
-    static struct digital_input_s input;
+    digital_input_t input = DigitalInputAllocate();
 
-    input.port = port;
-    input.pin = pin;
-    Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, input.port, input.pin, false);
+    if(input) {
+        input->port = port;
+        input->pin = pin;
+        Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, input->port, input->pin, false);
+    }
     
-    return &input;
+    return input;
 }
 
 bool DigitalInputRead(digital_input_t input) {
