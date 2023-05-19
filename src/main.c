@@ -143,7 +143,6 @@ int main(void) {
   digital_input_t tec_4;
 
   int divisor = 0;
-  bool current_state, last_state = false;
 
   Chip_SCU_PinMuxSet(LED_R_PORT, LED_R_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_R_FUNC);
   led_RGB_rojo = DigitalOutputCreate(LED_R_GPIO,LED_R_BIT, inverted_logic);
@@ -179,7 +178,7 @@ int main(void) {
 
   while (true) {
     if (!DigitalInputRead(tec_1)){
-      DigitalOutputActivate(led_RGB_rojo);
+      DigitalOutputActivate(led_RGB_rojo); 
       DigitalOutputActivate(led_RGB_verde);
       DigitalOutputActivate(led_RGB_azul);
     } else {
@@ -188,11 +187,9 @@ int main(void) {
       DigitalOutputDeactivate(led_RGB_azul);
     }
 
-    current_state = (!DigitalInputRead(tec_2));
-    if ((current_state) && (!last_state)) {
+    if(DigitalInputHasActivated(tec_2)){
       DigitalOutputToggle(led_amarillo);
     }
-    last_state = current_state;
 
     if (!DigitalInputRead(tec_3)) {
       DigitalOutputActivate(led_rojo);

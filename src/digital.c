@@ -25,15 +25,16 @@
 struct digital_output_s{
     uint8_t port;
     uint8_t pin;
-    bool inverted;
-    bool allocated;
+    bool inverted:1;
+    bool allocated:1;
 };
 
 struct digital_input_s{
     uint8_t port;
     uint8_t pin;
-    bool inverted;
-    bool allocated;
+    bool inverted:1;
+    bool allocated:1;
+    bool last_state:1;
 };
 
 /*---  Public Data Declaration  ---------------------------------------------------------------- */
@@ -102,11 +103,13 @@ digital_output_t DigitalOutputCreate(uint8_t port, uint8_t pin, bool inverted){
 }
 
 void DigitalOutputActivate (digital_output_t output){
-    Chip_GPIO_SetPinState(LPC_GPIO_PORT, output->port, output->pin, output->inverted ^ true);
+    //Chip_GPIO_SetPinState(LPC_GPIO_PORT, output->port, output->pin, output->inverted ^ true);
+    Chip_GPIO_SetPinState(LPC_GPIO_PORT, output->port, output->pin, true);
 }
 
 void DigitalOutputDeactivate (digital_output_t output){
-    Chip_GPIO_SetPinState(LPC_GPIO_PORT, output->port, output->pin, output->inverted ^ false);
+    //Chip_GPIO_SetPinState(LPC_GPIO_PORT, output->port, output->pin, output->inverted ^ false);
+    Chip_GPIO_SetPinState(LPC_GPIO_PORT, output->port, output->pin, false);
 }
 
 void DigitalOutputToggle (digital_output_t output){
@@ -130,4 +133,25 @@ digital_input_t DigitalInputCreate(uint8_t port, uint8_t pin, bool inverted){
 
 bool DigitalInputRead(digital_input_t input) {
     return input->inverted ^ Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, input->port, input->pin);
+}
+
+bool DigitalInputHasChanged (digital_input_t input){
+    bool state = DigitalInputRead(input);
+    bool result = state != input->last_state;
+    input->last_state = state;
+    return result;
+}
+
+bool DigitalInputHasActivated (digital_input_t input){
+    bool state = DigitalInputRead(input);
+    bool result = state && !input->last_state;
+    input->last_state = state;
+    return result;
+}
+
+bool DigitalInputHasDeactivated (digital_input_t input){
+    bool state = DigitalInputRead(input);
+    bool result = !state && input->last_state;
+    input->last_state = state;
+    return result;
 }

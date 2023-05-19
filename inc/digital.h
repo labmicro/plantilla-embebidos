@@ -38,6 +38,12 @@ digital_input_t DigitalInputCreate(uint8_t port, uint8_t pin, bool inverted);
 
 bool DigitalInputRead(digital_input_t input);
 
+bool DigitalInputHasChanged (digital_input_t input);
+
+bool DigitalInputHasActivated (digital_input_t input);
+
+bool DigitalInputHasDeactivated (digital_input_t input);
+
 
 /*---  End of File  ---------------------------------------------------------------------------- */
 #endif
