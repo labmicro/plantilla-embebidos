@@ -2,6 +2,7 @@
 // Autor: Jassan, Joel
 // Date: may/2023
 //
+// Project: Abstraction functions layer. Include inputs and outputs in edu-ciaa-nxp.
 /*---------------------------------------------------------------------------------------------- */
 
 #include "digital.h"
@@ -24,12 +25,14 @@
 struct digital_output_s{
     uint8_t port;
     uint8_t pin;
+    bool inverted;
     bool allocated;
 };
 
 struct digital_input_s{
     uint8_t port;
     uint8_t pin;
+    bool inverted;
     bool allocated;
 };
 
@@ -84,12 +87,13 @@ digital_input_t DigitalInputAllocate (void) {
 /*---  Public Function Implementation  --------------------------------------------------------- */
 
 // Soporte de Salidas
-digital_output_t DigitalOutputCreate(uint8_t port, uint8_t pin){
+digital_output_t DigitalOutputCreate(uint8_t port, uint8_t pin, bool inverted){
     digital_output_t output = DigitalOutputAllocate();
 
     if (output) {
         output->port = port;
         output->pin = pin;
+        output->inverted = inverted;
         Chip_GPIO_SetPinState(LPC_GPIO_PORT, output->port, output->pin, false);
         Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, output->port, output->pin, true);
     }
@@ -98,11 +102,11 @@ digital_output_t DigitalOutputCreate(uint8_t port, uint8_t pin){
 }
 
 void DigitalOutputActivate (digital_output_t output){
-    Chip_GPIO_SetPinState(LPC_GPIO_PORT, output->port, output->pin, true);
+    Chip_GPIO_SetPinState(LPC_GPIO_PORT, output->port, output->pin, output->inverted ^ true);
 }
 
 void DigitalOutputDeactivate (digital_output_t output){
-    Chip_GPIO_SetPinState(LPC_GPIO_PORT, output->port, output->pin, false);
+    Chip_GPIO_SetPinState(LPC_GPIO_PORT, output->port, output->pin, output->inverted ^ false);
 }
 
 void DigitalOutputToggle (digital_output_t output){
@@ -111,12 +115,13 @@ void DigitalOutputToggle (digital_output_t output){
 
 
 // Soporte de Entradas
-digital_input_t DigitalInputCreate(uint8_t port, uint8_t pin){
+digital_input_t DigitalInputCreate(uint8_t port, uint8_t pin, bool inverted){
     digital_input_t input = DigitalInputAllocate();
 
     if(input) {
         input->port = port;
         input->pin = pin;
+        input->inverted = inverted;
         Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, input->port, input->pin, false);
     }
     
@@ -124,5 +129,5 @@ digital_input_t DigitalInputCreate(uint8_t port, uint8_t pin){
 }
 
 bool DigitalInputRead(digital_input_t input) {
-    return Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, input->port, input->pin);
+    return input->inverted ^ Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, input->port, input->pin);
 }
