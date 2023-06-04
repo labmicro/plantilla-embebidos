@@ -13,6 +13,7 @@
 /*---  Includes  ------------------------------------------------------------------------------- */
 
 #include "digital.h"
+#include "poncho.h"
 
 /*---  Macros  --------------------------------------------------------------------------------- */
 
@@ -28,6 +29,8 @@ typedef struct board_s {
     digital_input_t increment;
     digital_input_t accept;
     digital_input_t cancel;
+
+    digital_output_t display; //no se si esta bien
 } const * const board_t;
 
 /*---  Public Function Declaration  ------------------------------------------------------------ */
