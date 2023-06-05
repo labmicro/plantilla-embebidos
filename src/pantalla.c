@@ -102,7 +102,7 @@ display_t DisplayCreate(uint8_t digits, display_driver_t driver){
 
     if (display) {
         display->digits = digits;
-        display->active_digit = digits - 1 ;
+        display->active_digit = digits - 1;
         memcpy(display->driver, driver, sizeof(display->driver));
         memset(display->memory, 0, sizeof(display->memory));
         display->driver->ScreenTurnOff();

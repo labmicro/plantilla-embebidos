@@ -61,35 +61,55 @@
 /* === Public function implementation ========================================================== */
 
 int main(void) {
-
+int divisor = 0;
   board_t board = BoardCreate();
 
-  //BuzzerInit();
-  //KeysInit();
-
   while (true){
-    if(DigitalInputHasActivated(board->accept)){
-      //DisplayWriteBCD(board->display, (uint8_t[]){1,2,3,4},4);
+    if (!DigitalInputRead(board->tec_1)){
+      DigitalOutputActivate(board->led_RGB_azul);
+    } else {
+      DigitalOutputDeactivate(board->led_RGB_azul);
     }
 
-    if(DigitalInputHasActivated(board->cancel)){
-      //DisplayWriteBCD(board->display, NULL, 0);
+    if(DigitalInputHasActivated(board->tec_2)){
+      DigitalOutputToggle(board->led_amarillo);
     }
 
-    if(DigitalInputHasActivated(board->set_time)){
-
+    if (!DigitalInputRead(board->tec_3)) {
+      DigitalOutputActivate(board->led_rojo);
     }
-    if(DigitalInputHasActivated(board->set_alarm)){
-      
-    }
-    if(DigitalInputHasActivated(board->decrement)){
-      
-    }
-    if(DigitalInputHasActivated(board->increment)){
-      
+    if (!DigitalInputRead(board->tec_4)) {
+      DigitalOutputDeactivate(board->led_rojo);
     }
 
-    DisplayRefresh(board->display);
+    divisor++;
+    if (divisor == 5) {
+      divisor = 0;
+      DigitalOutputToggle(board->led_verde);
+    }
+
+//    if(DigitalInputHasActivated(board->accept)){
+//      DisplayWriteBCD(board->display, (uint8_t[]){1,2,3,4},4);
+//    }
+//
+//    if(DigitalInputHasActivated(board->cancel)){
+//      DisplayWriteBCD(board->display, NULL, 0);
+//    }
+//
+//    if(DigitalInputHasActivated(board->set_time)){
+//
+//    }
+//    if(DigitalInputHasActivated(board->set_alarm)){
+//      
+//    }
+//    if(DigitalInputHasActivated(board->decrement)){
+//      
+//    }
+//    if(DigitalInputHasActivated(board->increment)){
+//      
+//    }
+//
+//    DisplayRefresh(board->display);
 
     //Retardo de tiempo
     for (int index = 0; index < 100; index++) {
