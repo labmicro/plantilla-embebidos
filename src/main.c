@@ -61,10 +61,18 @@
 /* === Public function implementation ========================================================== */
 
 int main(void) {
-int divisor = 0;
+  //temporal
+  int poncho_activo = 1;
+  int divisor = 0;
+  //
   board_t board = BoardCreate();
+  //board_t board = MainBoardInit();
 
   while (true){
+    // temporal
+    if(!poncho_activo){
+    //
+
     if (!DigitalInputRead(board->tec_1)){
       DigitalOutputActivate(board->led_RGB_azul);
     } else {
@@ -83,37 +91,45 @@ int divisor = 0;
     }
 
     divisor++;
-    if (divisor == 5) {
+    if (divisor == 20) {
       divisor = 0;
       DigitalOutputToggle(board->led_verde);
     }
 
-//    if(DigitalInputHasActivated(board->accept)){
-//      DisplayWriteBCD(board->display, (uint8_t[]){1,2,3,4},4);
-//    }
-//
-//    if(DigitalInputHasActivated(board->cancel)){
-//      DisplayWriteBCD(board->display, NULL, 0);
-//    }
-//
-//    if(DigitalInputHasActivated(board->set_time)){
-//
-//    }
-//    if(DigitalInputHasActivated(board->set_alarm)){
-//      
-//    }
-//    if(DigitalInputHasActivated(board->decrement)){
-//      
-//    }
-//    if(DigitalInputHasActivated(board->increment)){
-//      
-//    }
-//
-//    DisplayRefresh(board->display);
+    //
+    } else {
+    //
+
+    if(DigitalInputHasActivated(board->accept)){
+      DisplayWriteBCD(board->display, (uint8_t[]){4,3,2,1},4);
+    }
+
+    if(DigitalInputHasActivated(board->cancel)){
+      DisplayWriteBCD(board->display, NULL, 0);
+    }
+
+    if(DigitalInputHasActivated(board->set_time)){
+      
+    }
+    if(DigitalInputHasActivated(board->set_alarm)){
+      
+    }
+    if(DigitalInputHasActivated(board->decrement)){
+      
+    }
+    if(DigitalInputHasActivated(board->increment)){
+      
+    }
+
+    DisplayRefresh(board->display);
+
+    //
+    }
+    //
 
     //Retardo de tiempo
     for (int index = 0; index < 100; index++) {
-      for (int delay = 0; delay < 2000; delay++) {
+      for (int delay = 0; delay < 300; delay++) {
         __asm("NOP");
       }
     }

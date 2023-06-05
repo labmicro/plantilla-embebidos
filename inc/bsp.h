@@ -12,6 +12,8 @@
 
 /*---  Includes  ------------------------------------------------------------------------------- */
 
+#include "chip.h"
+
 #include "ciaa.h"
 #include "digital.h"
 #include "poncho.h"
@@ -39,6 +41,15 @@ typedef struct board_s {
     digital_input_t tec_4;
 
     // poncho
+    digital_output_t seg_A,seg_B,seg_C,seg_D,seg_E,seg_F,seg_G,seg_P;
+
+    digital_output_t dig_1;
+    digital_output_t dig_2;
+    digital_output_t dig_3;
+    digital_output_t dig_4;
+
+    display_t display;
+
     digital_output_t buzzer;
     digital_input_t set_time;
     digital_input_t set_alarm;
@@ -46,8 +57,6 @@ typedef struct board_s {
     digital_input_t increment;
     digital_input_t accept;
     digital_input_t cancel;
-
-    display_t display;
 
 } const * const board_t;
 
