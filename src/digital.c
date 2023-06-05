@@ -14,11 +14,13 @@
 /*---  Macros and Definitions  ----------------------------------------------------------------- */
 
 #ifndef OUTPUT_INSTANCES
-    #define OUTPUT_INSTANCES 6
+    #define OUTPUT_INSTANCES 14
+    //12
 #endif
 
 #ifndef INPUT_INSTANCES
-    #define INPUT_INSTANCES 4
+    #define INPUT_INSTANCES 6   
+    //6
 #endif
 
 /*---  Private Data Declaration  --------------------------------------------------------------- */
@@ -43,6 +45,10 @@ struct digital_input_s{
 /*---  Public Data Declaration  ---------------------------------------------------------------- */
 
 /*---  Private Function Declaration  ----------------------------------------------------------- */
+
+digital_output_t DigitalOutputAllocate (void);
+
+digital_input_t DigitalInputAllocate (void);
 
 /*---  Public Function Declaration  ------------------------------------------------------------ */
 
