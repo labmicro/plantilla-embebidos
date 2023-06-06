@@ -196,6 +196,8 @@ board_t BoardCreate(void){
 
     // Inicializo los pines de la edu-ciaa (no compatible con el poncho)
     // MainBoardInit();
+    Chip_SCU_PinMuxSet(LED_3_PORT, LED_3_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_3_FUNC);
+    board.led_verde = DigitalOutputCreate(LED_3_GPIO, LED_3_BIT, inverted_logic);
 
     // Inicializo el poncho.
     DigitsInit();
@@ -210,6 +212,19 @@ board_t BoardCreate(void){
     });
 
     return &board;
+}
+
+void SisTick_Init(uint16_t ticks) {
+    __asm volatile ("cpsid i");
+
+    /* Activate SysTick */
+    SystemCoreClockUpdate();
+    SysTick_Config(SystemCoreClock/ticks);
+
+    /* Update priority set by Systick_Config */
+    NVIC_SetPriority(SysTick_IRQn, (1 <<__NVIC_PRIO_BITS) - 1);
+
+    __asm volatile ("cpsie i");
 }
 
 /*---  End of File  ---------------------------------------------------------------------------- */
