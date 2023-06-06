@@ -61,44 +61,23 @@
 /* === Public function implementation ========================================================== */
 
 int main(void) {
-  //temporal
-  int poncho_activo = 1;
+  //SisTick_Init(1000);
+
   int divisor = 0;
-  //
   board_t board = BoardCreate();
-  //board_t board = MainBoardInit();
 
+
+
+  // -- Infinite loop
   while (true){
-    // temporal
-    if(!poncho_activo){
-    //
 
-    if (!DigitalInputRead(board->tec_1)){
-      DigitalOutputActivate(board->led_RGB_azul);
-    } else {
-      DigitalOutputDeactivate(board->led_RGB_azul);
-    }
-
-    if(DigitalInputHasActivated(board->tec_2)){
-      DigitalOutputToggle(board->led_amarillo);
-    }
-
-    if (!DigitalInputRead(board->tec_3)) {
-      DigitalOutputActivate(board->led_rojo);
-    }
-    if (!DigitalInputRead(board->tec_4)) {
-      DigitalOutputDeactivate(board->led_rojo);
-    }
-
+    // testing de salida de loop
     divisor++;
-    if (divisor == 20) {
+    if (divisor == 100) {
       divisor = 0;
       DigitalOutputToggle(board->led_verde);
     }
-
-    //
-    } else {
-    //
+    // -------------------------
 
     if(DigitalInputHasActivated(board->accept)){
       DisplayWriteBCD(board->display, (uint8_t[]){4,3,2,1},4);
@@ -107,6 +86,9 @@ int main(void) {
     if(DigitalInputHasActivated(board->cancel)){
       DisplayWriteBCD(board->display, NULL, 0);
     }
+
+    
+
 
     if(DigitalInputHasActivated(board->set_time)){
       
@@ -117,15 +99,21 @@ int main(void) {
     if(DigitalInputHasActivated(board->decrement)){
       
     }
+
+    //prueba de buzzer (enciende led)
+    if (DigitalInputRead(board->increment)){
+      DigitalOutputActivate(board->buzzer);
+    } else {
+      DigitalOutputDeactivate(board->buzzer);
+    }
+
+
     if(DigitalInputHasActivated(board->increment)){
-      
+    
     }
 
     DisplayRefresh(board->display);
 
-    //
-    }
-    //
 
     //Retardo de tiempo
     for (int index = 0; index < 100; index++) {
@@ -135,7 +123,6 @@ int main(void) {
     }
   }
 
-    
 }
 
 /* === End of documentation ==================================================================== */

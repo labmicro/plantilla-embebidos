@@ -50,11 +50,11 @@ typedef struct board_s {
 
     display_t display;
 
-    digital_output_t buzzer;
-    digital_input_t set_time;
-    digital_input_t set_alarm;
-    digital_input_t decrement;
-    digital_input_t increment;
+    digital_output_t buzzer;    //conectado a led_RGB_azul
+    digital_input_t set_time;   //F1
+    digital_input_t set_alarm;  //F2
+    digital_input_t decrement;  //F3
+    digital_input_t increment;  //F4
     digital_input_t accept;
     digital_input_t cancel;
 
