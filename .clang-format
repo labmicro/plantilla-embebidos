@@ -1,6 +1,6 @@
 BasedOnStyle: LLVM
-UseTab: Never
-IndentWidth: 2
+UseTab: Always
+IndentWidth: 4
 TabWidth: 4
 BreakBeforeBraces: Attach
 AllowShortIfStatementsOnASingleLine: false
