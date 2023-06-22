@@ -81,6 +81,26 @@ int main(void) {
     if (divisor == 10) {
       divisor = 0;
       DigitalOutputToggle(board->led_verde);
+
+      if (d0 < 9)
+        d0++;
+      else {
+        d0 = 0;
+        if (d1 < 9)
+          d1++;
+        else {
+          d1 = 0;
+          if (d2 < 9)
+            d2++;
+          else {
+            d2 = 0;
+            if (d3 < 9)
+              d3++;
+            else
+              d3 = 0;
+          }
+        }
+      }
     }
     // -------------------------
 
@@ -99,10 +119,8 @@ int main(void) {
 
     if (DigitalInputHasActivated(board->set_time)) {
     }
-
     if (DigitalInputHasActivated(board->set_alarm)) {
     }
-
     if (DigitalInputHasActivated(board->decrement)) {
     }
 
