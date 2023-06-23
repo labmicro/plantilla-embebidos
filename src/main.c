@@ -47,7 +47,7 @@
 
 /* === Macros definitions * ==================================================================== */
 
-#define REFRESH_TIME 1
+#define REFRESH_TIME 1000
 
 /* === Private data type declarations ========================================================== */
 
@@ -73,10 +73,10 @@ int main(void) {
 
 	uint8_t hora[CLOCK_SIZE];
 
-	reloj = ClockCreate(REFRESH_TIME);
+	reloj = ClockCreate(REFRESH_TIME / 1000);
 	board = BoardCreate();
 
-	SisTick_Init(1000);
+	SisTick_Init(REFRESH_TIME);
 
 	// -- Infinite loop
 	while (true) {
@@ -92,6 +92,7 @@ int main(void) {
 		}
 
 		if (DigitalInputHasActivated(board->set_time)) {
+			// DisplayFlashDigits(board->display, 1, CLOCK_SIZE, 100);
 		}
 
 		if (DigitalInputHasActivated(board->set_alarm)) {
@@ -102,7 +103,7 @@ int main(void) {
 
 		if (DigitalInputHasActivated(board->increment)) {
 		}
-
+		DisplayFlashDigits(board->display, 0, CLOCK_SIZE, 100);
 		// DisplayRefresh(board->display);
 
 		// Retardo de tiempo

@@ -96,5 +96,16 @@ void DisplayWriteBCD(display_t display, uint8_t * number, uint8_t size);
  */
 void DisplayRefresh(display_t display);
 
+/**
+ * @brief Funcion para hacer parpadear los digitos
+ *
+ * @param display Puntero al descriptor de la pantalla
+ * @param flashing_digits array que indica que digitos parpadear
+ * @param size cantidad de elementos en el vector
+ * @param frecuency Factor de division de la frecuencia para el parpadeo de los digitos
+ */
+void DisplayFlashDigits(display_t display, int8_t flashing_digits, uint8_t size,
+						uint16_t frequency);
+
 /*---  End of File ---------------------------------------------------------------------------- */
 #endif
