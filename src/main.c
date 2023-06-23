@@ -41,10 +41,13 @@
 /* === Headers files inclusions * =============================================================== */
 
 #include "bsp.h"
+#include "reloj.h"
 #include <stdbool.h>
 #include <stddef.h>
 
 /* === Macros definitions * ==================================================================== */
+
+#define REFRESH_TIME 1
 
 /* === Private data type declarations ========================================================== */
 
@@ -57,6 +60,7 @@ void SisTick_Init(uint32_t time);
 /* === Public variable definitions ============================================================= */
 
 static board_t board;
+static clock_t reloj;
 
 /* === Private variable definitions ============================================================ */
 
@@ -65,14 +69,11 @@ static board_t board;
 /* === Public function implementation ========================================================== */
 
 int main(void) {
-
 	int reloj_activado = 0;
-	int divisor = 0;
 
-	uint8_t d0 = 0;
-	uint8_t d1 = 0;
-	uint8_t d2 = 0;
-	uint8_t d3 = 0;
+	uint8_t hora[CLOCK_SIZE];
+
+	reloj = ClockCreate(REFRESH_TIME);
 	board = BoardCreate();
 
 	SisTick_Init(1000);
@@ -80,32 +81,6 @@ int main(void) {
 	// -- Infinite loop
 	while (true) {
 
-		// testing de salida de loop
-		divisor++;
-		if (divisor == 10) {
-			divisor = 0;
-			DigitalOutputToggle(board->led_verde);
-
-			if (d0 < 9)
-				d0++;
-			else {
-				d0 = 0;
-				if (d1 < 9)
-					d1++;
-				else {
-					d1 = 0;
-					if (d2 < 9)
-						d2++;
-					else {
-						d2 = 0;
-						if (d3 < 9)
-							d3++;
-						else
-							d3 = 0;
-					}
-				}
-			}
-		}
 		// -------------------------
 
 		if (DigitalInputHasActivated(board->accept)) {
@@ -116,23 +91,13 @@ int main(void) {
 			reloj_activado = 0;
 		}
 
-		if (reloj_activado)
-			DisplayWriteBCD(board->display, (uint8_t[]){d0, d1, d2, d3}, 4);
-		else
-			DisplayWriteBCD(board->display, NULL, 0);
-
 		if (DigitalInputHasActivated(board->set_time)) {
 		}
+
 		if (DigitalInputHasActivated(board->set_alarm)) {
 		}
-		if (DigitalInputHasActivated(board->decrement)) {
-		}
 
-		// prueba de buzzer (enciende led)
-		if (DigitalInputRead(board->increment)) {
-			DigitalOutputActivate(board->buzzer);
-		} else {
-			DigitalOutputDeactivate(board->buzzer);
+		if (DigitalInputHasActivated(board->decrement)) {
 		}
 
 		if (DigitalInputHasActivated(board->increment)) {
@@ -146,11 +111,17 @@ int main(void) {
 				__asm("NOP");
 			}
 		}
+
+		ClockGetTime(reloj, hora, CLOCK_SIZE);
+		__asm volatile("cpsid i");
+		DisplayWriteBCD(board->display, hora, CLOCK_SIZE);
+		__asm volatile("cpsie i");
 	}
 }
 
 void SysTick_Handler(void) {
 	DisplayRefresh(board->display);
+	ClockRefresh(reloj, CLOCK_SIZE);
 }
 
 /* === End of documentation ==================================================================== */
