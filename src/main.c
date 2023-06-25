@@ -51,6 +51,15 @@
 
 /* === Private data type declarations ========================================================== */
 
+typedef enum {
+	SIN_CONFIGURAR,
+	MOSTRANDO_HORA,
+	AJUSTANDO_MINUTOS_ACTUAL,
+	AJUSTANDO_HORAS_ACTUAL,
+	AJUSTANDO_MINUTOS_ALARMA,
+	AJUSTANDO_HORAS_ALARMA,
+} * modo_t;
+
 /* === Private variable declarations =========================================================== */
 
 /* === Private function declarations =========================================================== */
@@ -61,6 +70,7 @@ void SisTick_Init(uint32_t time);
 
 static board_t board;
 static clock_t reloj;
+static modo_t modo;
 
 /* === Private variable definitions ============================================================ */
 
@@ -68,13 +78,49 @@ static clock_t reloj;
 
 /* === Public function implementation ========================================================== */
 
+void SwitchMode(modo_t valor) {
+	modo = valor;
+	switch (modo) {
+	case SIN_CONFIGURAR:
+		DisplayFlashDigits(board->display, 0, 3, 200);
+		break;
+	case MOSTRANDO_HORA:
+		DisplayFlashDigits(board->display, 0, 0, 0);
+		break;
+	case AJUSTANDO_MINUTOS_ACTUAL:
+		DisplayFlashDigits(board->display, 2, 3, 200);
+		break;
+	case AJUSTANDO_HORAS_ACTUAL:
+		DisplayFlashDigits(board->display, 0, 1, 200);
+		break;
+	case AJUSTANDO_MINUTOS_ALARMA:
+		DisplayFlashDigits(board->display, 2, 3, 200);
+		DisplayToggleDot(board->display, 0);
+		DisplayToggleDot(board->display, 1);
+		DisplayToggleDot(board->display, 2);
+		DisplayToggleDot(board->display, 3);
+		break;
+	case AJUSTANDO_HORAS_ALARMA:
+		DisplayFlashDigits(board->display, 0, 1, 200);
+		DisplayToggleDot(board->display, 0);
+		DisplayToggleDot(board->display, 1);
+		DisplayToggleDot(board->display, 2);
+		DisplayToggleDot(board->display, 3);
+		break;
+	default:
+		break;
+	}
+}
+
 int main(void) {
-	uint8_t hora[CLOCK_SIZE];
+	uint8_t entrada[ALARM_SIZE];
 
 	reloj = ClockCreate(REFRESH_TIME);
 	board = BoardCreate();
 
 	SisTick_Init(REFRESH_TIME);
+	SwitchMode(SIN_CONFIGURAR);
+	DisplayFlashDigits(board->display, 2, 3, 200);
 
 	// -- Infinite loop
 	while (true) {
@@ -82,10 +128,20 @@ int main(void) {
 		// -------------------------
 
 		if (DigitalInputHasActivated(board->accept)) {
-			DisplayFlashDigits(board->display, 0, CLOCK_SIZE, 100);
+			if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
+				SwitchMode(AJUSTANDO_HORAS_ACTUAL);
+			} else if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
+				ClockSetTime(reloj, entrada, sizeof(entrada));
+				SwitchMode(MOSTRANDO_HORA);
+			}
 		}
 
 		if (DigitalInputHasActivated(board->cancel)) {
+			if (ClockSetTime(reloj, entrada, sizeof(entrada))) {
+				SwitchMode(MOSTRANDO_HORA);
+			} else if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
+				SwitchMode(SIN_CONFIGURAR);
+			}
 		}
 
 		if (DigitalInputHasActivated(board->set_time)) {
@@ -98,7 +154,6 @@ int main(void) {
 		}
 
 		if (DigitalInputHasActivated(board->increment)) {
-			DisplayChangeFlashDigit(board->display);
 		}
 
 		// Retardo de tiempo
@@ -108,24 +163,29 @@ int main(void) {
 			}
 		}
 
-		ClockGetTime(reloj, hora, CLOCK_SIZE);
-		__asm volatile("cpsid i");
-		DisplayWriteBCD(board->display, hora, CLOCK_SIZE);
-		__asm volatile("cpsie i");
+		// ClockGetTime(reloj, hora, CLOCK_SIZE);
+		//__asm volatile("cpsid i");
+		// DisplayWriteBCD(board->display, hora, CLOCK_SIZE);
+		//__asm volatile("cpsie i");
 	}
 }
 
 void SysTick_Handler(void) {
-	// static bool last_value = false;
+	static bool last_value = false;
 	bool current_value;
+	uint8_t hora[CLOCK_SIZE];
 
 	DisplayRefresh(board->display);
 	current_value = ClockRefresh(reloj, CLOCK_SIZE);
 
-	if (!current_value) {
-		// DisplayToggleDot(board->display, 1);
-		DisplaySetDot(board->display, 1); // esto es un error, que no logro detectar como corregir
-										  // por algun motivo la pantalla se reinicia
+	if (current_value != last_value) {
+		last_value = current_value;
+
+		if (modo <= MOSTRANDO_HORA) {
+			ClockGetTime(reloj, hora, CLOCK_SIZE);
+			DisplayWriteBCD(board->display, hora, CLOCK_SIZE);
+			DisplayToggleDot(board->display, 1);
+		}
 	}
 }
 

@@ -32,30 +32,31 @@
 
 /** \brief Simple brief of a ".c" template*/
 
-/* ---  Headers files inclusions   ------------------------------------------------------------- */
+/* ---  Headers files inclusions   --------------------------------------------------------------------------------- */
 
 #include "pantalla.h"
 #include <string.h>
 
-/* ---  Macros definitions  -------------------------------------------------------------------- */
+/* ---  Macros definitions  ---------------------------------------------------------------------------------------- */
 
 #ifndef DISPLAY_MAX_DIGITS
 #define DISPLAY_MAX_DIGITS 8
 #endif
 
-/*---  Private Data Declaration  --------------------------------------------------------------- */
+/*---  Private Data Declaration  ----------------------------------------------------------------------------------- */
 
 struct display_s {
 	uint8_t digits;
 	uint8_t active_digit;
-	uint8_t flashing_digits;
+	uint8_t flashing_from;
+	uint8_t flashing_to;
 	uint16_t flashing_count;  // cuenta de la frecuencia de parpadeo
 	uint16_t flashing_factor; // frecuencia de parpadeo
 	uint8_t memory[DISPLAY_MAX_DIGITS];
 	struct display_driver_s driver[1];
 };
 
-/*---  Private Variable Declaration ------------------------------------------------------------ */
+/*---  Private Variable Declaration -------------------------------------------------------------------------------- */
 
 static const uint8_t IMAGES[] = {
 
@@ -71,24 +72,24 @@ static const uint8_t IMAGES[] = {
 	SEGMENT_A | SEGMENT_B | SEGMENT_C | SEGMENT_D | SEGMENT_F | SEGMENT_G,			   //! < 9
 };
 
-/*---  Public Data Declaration  ---------------------------------------------------------------- */
+/*---  Public Data Declaration  ------------------------------------------------------------------------------------ */
 
-/*---  Private Function Declaration  ----------------------------------------------------------- */
+/*---  Private Function Declaration  ------------------------------------------------------------------------------- */
 
 // Funcion para asignar un descriptor para crear una nueva pantalla de 7 segmentos
 static display_t DisplayAllocate(void);
 
-/*---  Public Function Declaration  ------------------------------------------------------------ */
+/*---  Public Function Declaration  -------------------------------------------------------------------------------- */
 
-/*---  Private Data Definition  ---------------------------------------------------------------- */
+/*---  Private Data Definition  ------------------------------------------------------------------------------------ */
 
-/*---  Public Data Definition  ----------------------------------------------------------------- */
+/*---  Public Data Definition  ------------------------------------------------------------------------------------- */
 
-/*---  Private Function Definition  ------------------------------------------------------------ */
+/*---  Private Function Definition  -------------------------------------------------------------------------------- */
 
-/*---  Public Function Definition  ------------------------------------------------------------- */
+/*---  Public Function Definition  --------------------------------------------------------------------------------- */
 
-/*---  Private Function Implementation  -------------------------------------------------------- */
+/*---  Private Function Implementation  ---------------------------------------------------------------------------- */
 
 display_t DisplayAllocate(void) {
 	static struct display_s instances[1] = {0};
@@ -96,7 +97,7 @@ display_t DisplayAllocate(void) {
 	return &instances[0];
 }
 
-/*---  Public Function Implementation  --------------------------------------------------------- */
+/*---  Public Function Implementation  ----------------------------------------------------------------------------- */
 
 display_t DisplayCreate(uint8_t digits, display_driver_t driver) {
 	display_t display = DisplayAllocate();
@@ -104,7 +105,8 @@ display_t DisplayCreate(uint8_t digits, display_driver_t driver) {
 	if (display) {
 		display->digits = digits;
 		display->active_digit = digits - 1;
-		display->flashing_digits = 0;
+		display->flashing_from = 0;
+		display->flashing_to = 0;
 		display->flashing_count = 0;
 		display->flashing_factor = 0;
 		memcpy(display->driver, driver, sizeof(display->driver));
@@ -133,11 +135,11 @@ void DisplayRefresh(display_t display) {
 
 	segments = display->memory[display->active_digit];
 	if (display->flashing_factor) {
-		if (display->active_digit == 0)
+		if (display->active_digit == 0) {
 			display->flashing_count = (display->flashing_count + 1) % display->flashing_factor;
-
-		if (display->active_digit == display->flashing_digits) {
-			if (display->flashing_count > display->flashing_factor / 2)
+		}
+		if ((display->active_digit >= display->flashing_from) && (display->active_digit <= display->flashing_to)) {
+			if (display->flashing_count > (display->flashing_factor / 2))
 				segments = 0;
 		}
 	}
@@ -146,19 +148,11 @@ void DisplayRefresh(display_t display) {
 	display->driver->DigitTurnOn(display->active_digit);
 }
 
-void DisplayFlashDigits(display_t display, uint8_t flashing_digits, uint8_t size,
-						uint16_t frequency) {
+void DisplayFlashDigits(display_t display, uint8_t from, uint8_t to, uint16_t frequency) {
+	display->flashing_count = 0;
 	display->flashing_factor = frequency;
-	display->flashing_digits = flashing_digits;
-}
-
-void DisplayChangeFlashDigit(display_t display) {
-	if (display->flashing_factor) {
-		if (display->flashing_digits < 3) {
-			display->flashing_digits = display->flashing_digits + 1;
-		} else
-			display->flashing_digits = 0;
-	}
+	display->flashing_from = from;
+	display->flashing_to = to;
 }
 
 void DisplayToggleDot(display_t display, uint8_t position) {
@@ -166,11 +160,7 @@ void DisplayToggleDot(display_t display, uint8_t position) {
 }
 
 void DisplaySetDot(display_t display, uint8_t position) {
-	display->memory[position] = display->memory[position] | SEGMENT_P;
+	display->memory[position] |= SEGMENT_P;
 }
 
-void DisplayClearDot(display_t display, uint8_t position) {
-	display->memory[position] = display->memory[position]; // & (1111111); // SEGMENT_P;
-}
-
-/*---  End of File  ---------------------------------------------------------------------------- */
+/*---  End of File  ------------------------------------------------------------------------------------------------ */

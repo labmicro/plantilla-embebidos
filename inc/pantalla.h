@@ -33,11 +33,11 @@
 #ifndef PANTALLA_H
 #define PANTALLA_H
 
-/*---  Includes  ------------------------------------------------------------------------------- */
+/*---  Includes  --------------------------------------------------------------------------------------------------- */
 
 #include <stdint.h>
 
-/* ---  Macros definitions  -------------------------------------------------------------------- */
+/* ---  Macros definitions  ---------------------------------------------------------------------------------------- */
 
 #define SEGMENT_A (1 << 0)
 #define SEGMENT_B (1 << 1)
@@ -48,7 +48,7 @@
 #define SEGMENT_G (1 << 6)
 #define SEGMENT_P (1 << 7)
 
-/*---  Public Data Declaration  ---------------------------------------------------------------- */
+/*---  Public Data Declaration  ------------------------------------------------------------------------------------ */
 
 //! Puntero al descriptor para el manejo de la pantalla de 7 segmentos
 typedef struct display_s * display_t;
@@ -69,7 +69,7 @@ typedef struct display_driver_s {
 	display_digit_on_t DigitTurnOn;		//! Funcion para prender un digito
 } const * const display_driver_t;		//! Puntero al controlador de la pantalla
 
-/*---  Public Function Declaration ------------------------------------------------------------ */
+/*---  Public Function Declaration -------------------------------------------------------------------------------- */
 
 /**
  * @brief Metodo para crear una pantalla 7 segmentos multiplexada
@@ -97,30 +97,30 @@ void DisplayWriteBCD(display_t display, uint8_t * number, uint8_t size);
 void DisplayRefresh(display_t display);
 
 /**
- * @brief Funcion para hacer parpadear los digitos
+ * @brief Funcion para parpadear ciertos digitos de la pantalla
  *
  * @param display Puntero al descriptor de la pantalla
- * @param flashing_digits array que indica que digitos parpadear
- * @param size cantidad de elementos en el vector
- * @param frecuency Factor de division de la frecuencia para el parpadeo de los digitos
+ * @param from Posicion del primer digito
+ * @param to Posicion del ultimo digito
+ * @param frequency Factor de division del refresco
  */
-void DisplayFlashDigits(display_t display, uint8_t flashing_digits, uint8_t size,
-						uint16_t frequency);
-
-/**
- * @brief Funcion para hacer parpadear el digito inmediatamente superior
- *
- * @param display Puntero al descriptor de la pantalla
- */
-void DisplayChangeFlashDigit(display_t display);
+void DisplayFlashDigits(display_t display, uint8_t from, uint8_t to, uint16_t frequency);
 
 /**
  * @brief Funcion para conmutar el estado del punto del display
- * 
+ *
  * @param display Puntero al descriptor de la pantalla
  * @param position Posicion del punto que se conmuta de estado
  */
-void DisplayToggleDot (display_t display, uint8_t position);
+void DisplayToggleDot(display_t display, uint8_t position);
 
-/*---  End of File ---------------------------------------------------------------------------- */
+/**
+ * @brief Funcion para setear el estado del punto del display
+ *
+ * @param display Puntero al descriptor de la pantalla
+ * @param position Posicion del punto que se conmuta de estado
+ */
+void DisplaySetDot(display_t display, uint8_t position);
+
+/*---  End of File ------------------------------------------------------------------------------------------------ */
 #endif
