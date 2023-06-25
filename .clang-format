@@ -6,7 +6,7 @@ BreakBeforeBraces: Attach
 AllowShortIfStatementsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: false
 IndentCaseLabels: false
-ColumnLimit: 100
+ColumnLimit: 120
 AccessModifierOffset: -4
 FixNamespaceComments: false
 PointerAlignment: Middle
