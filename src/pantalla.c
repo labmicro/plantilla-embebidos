@@ -161,4 +161,16 @@ void DisplayChangeFlashDigit(display_t display) {
 	}
 }
 
+void DisplayToggleDot(display_t display, uint8_t position) {
+	display->memory[position] ^= SEGMENT_P;
+}
+
+void DisplaySetDot(display_t display, uint8_t position) {
+	display->memory[position] = display->memory[position] | SEGMENT_P;
+}
+
+void DisplayClearDot(display_t display, uint8_t position) {
+	display->memory[position] = display->memory[position]; // & (1111111); // SEGMENT_P;
+}
+
 /*---  End of File  ---------------------------------------------------------------------------- */

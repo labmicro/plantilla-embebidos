@@ -114,5 +114,13 @@ void DisplayFlashDigits(display_t display, uint8_t flashing_digits, uint8_t size
  */
 void DisplayChangeFlashDigit(display_t display);
 
+/**
+ * @brief Funcion para conmutar el estado del punto del display
+ * 
+ * @param display Puntero al descriptor de la pantalla
+ * @param position Posicion del punto que se conmuta de estado
+ */
+void DisplayToggleDot (display_t display, uint8_t position);
+
 /*---  End of File ---------------------------------------------------------------------------- */
 #endif

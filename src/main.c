@@ -71,7 +71,7 @@ static clock_t reloj;
 int main(void) {
 	uint8_t hora[CLOCK_SIZE];
 
-	reloj = ClockCreate(REFRESH_TIME / 100);
+	reloj = ClockCreate(REFRESH_TIME);
 	board = BoardCreate();
 
 	SisTick_Init(REFRESH_TIME);
@@ -103,7 +103,7 @@ int main(void) {
 
 		// Retardo de tiempo
 		for (int index = 0; index < 100; index++) {
-			for (int delay = 0; delay < 1200; delay++) {
+			for (int delay = 0; delay < 5000; delay++) {
 				__asm("NOP");
 			}
 		}
@@ -116,8 +116,17 @@ int main(void) {
 }
 
 void SysTick_Handler(void) {
+	// static bool last_value = false;
+	bool current_value;
+
 	DisplayRefresh(board->display);
-	ClockRefresh(reloj, CLOCK_SIZE);
+	current_value = ClockRefresh(reloj, CLOCK_SIZE);
+
+	if (!current_value) {
+		// DisplayToggleDot(board->display, 1);
+		DisplaySetDot(board->display, 1); // esto es un error, que no logro detectar como corregir
+										  // por algun motivo la pantalla se reinicia
+	}
 }
 
 /* === End of documentation ==================================================================== */
