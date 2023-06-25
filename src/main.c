@@ -69,11 +69,9 @@ static clock_t reloj;
 /* === Public function implementation ========================================================== */
 
 int main(void) {
-	int reloj_activado = 0;
-
 	uint8_t hora[CLOCK_SIZE];
 
-	reloj = ClockCreate(REFRESH_TIME / 1000);
+	reloj = ClockCreate(REFRESH_TIME / 100);
 	board = BoardCreate();
 
 	SisTick_Init(REFRESH_TIME);
@@ -84,15 +82,13 @@ int main(void) {
 		// -------------------------
 
 		if (DigitalInputHasActivated(board->accept)) {
-			reloj_activado = 1;
+			DisplayFlashDigits(board->display, 0, CLOCK_SIZE, 100);
 		}
 
 		if (DigitalInputHasActivated(board->cancel)) {
-			reloj_activado = 0;
 		}
 
 		if (DigitalInputHasActivated(board->set_time)) {
-			// DisplayFlashDigits(board->display, 1, CLOCK_SIZE, 100);
 		}
 
 		if (DigitalInputHasActivated(board->set_alarm)) {
@@ -102,13 +98,12 @@ int main(void) {
 		}
 
 		if (DigitalInputHasActivated(board->increment)) {
+			DisplayChangeFlashDigit(board->display);
 		}
-		DisplayFlashDigits(board->display, 0, CLOCK_SIZE, 100);
-		// DisplayRefresh(board->display);
 
 		// Retardo de tiempo
 		for (int index = 0; index < 100; index++) {
-			for (int delay = 0; delay < 300; delay++) {
+			for (int delay = 0; delay < 1200; delay++) {
 				__asm("NOP");
 			}
 		}
