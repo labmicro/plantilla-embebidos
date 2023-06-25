@@ -153,10 +153,12 @@ void DisplayFlashDigits(display_t display, uint8_t flashing_digits, uint8_t size
 }
 
 void DisplayChangeFlashDigit(display_t display) {
-	if (display->flashing_digits < 3) {
-		display->flashing_digits = display->flashing_digits + 1;
-	} else
-		display->flashing_digits = 0;
+	if (display->flashing_factor) {
+		if (display->flashing_digits < 3) {
+			display->flashing_digits = display->flashing_digits + 1;
+		} else
+			display->flashing_digits = 0;
+	}
 }
 
 /*---  End of File  ---------------------------------------------------------------------------- */

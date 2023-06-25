@@ -110,7 +110,7 @@ void DisplayFlashDigits(display_t display, uint8_t flashing_digits, uint8_t size
 /**
  * @brief Funcion para hacer parpadear el digito inmediatamente superior
  *
- * @param displayPuntero al descriptor de la pantalla
+ * @param display Puntero al descriptor de la pantalla
  */
 void DisplayChangeFlashDigit(display_t display);
 
