@@ -48,7 +48,7 @@
 struct display_s {
 	uint8_t digits;
 	uint8_t active_digit;
-	int8_t flashing_digits;
+	uint8_t flashing_digits;
 	uint16_t flashing_count;  // cuenta de la frecuencia de parpadeo
 	uint16_t flashing_factor; // frecuencia de parpadeo
 	uint8_t memory[DISPLAY_MAX_DIGITS];
@@ -136,19 +136,27 @@ void DisplayRefresh(display_t display) {
 		if (display->active_digit == 0)
 			display->flashing_count = (display->flashing_count + 1) % display->flashing_factor;
 
-		if ((display->active_digit & display->flashing_digits) == 1) // no funciona
+		if (display->active_digit == display->flashing_digits) {
 			if (display->flashing_count > display->flashing_factor / 2)
 				segments = 0;
+		}
 	}
 
 	display->driver->SegmentsTurnOn(segments);
 	display->driver->DigitTurnOn(display->active_digit);
 }
 
-void DisplayFlashDigits(display_t display, int8_t flashing_digits, uint8_t size,
+void DisplayFlashDigits(display_t display, uint8_t flashing_digits, uint8_t size,
 						uint16_t frequency) {
 	display->flashing_factor = frequency;
-	display->flashing_digits = 1 << 3; // no funciona
+	display->flashing_digits = flashing_digits;
+}
+
+void DisplayChangeFlashDigit(display_t display) {
+	if (display->flashing_digits < 3) {
+		display->flashing_digits = display->flashing_digits + 1;
+	} else
+		display->flashing_digits = 0;
 }
 
 /*---  End of File  ---------------------------------------------------------------------------- */

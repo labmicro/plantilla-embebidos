@@ -104,8 +104,15 @@ void DisplayRefresh(display_t display);
  * @param size cantidad de elementos en el vector
  * @param frecuency Factor de division de la frecuencia para el parpadeo de los digitos
  */
-void DisplayFlashDigits(display_t display, int8_t flashing_digits, uint8_t size,
+void DisplayFlashDigits(display_t display, uint8_t flashing_digits, uint8_t size,
 						uint16_t frequency);
+
+/**
+ * @brief Funcion para hacer parpadear el digito inmediatamente superior
+ *
+ * @param displayPuntero al descriptor de la pantalla
+ */
+void DisplayChangeFlashDigit(display_t display);
 
 /*---  End of File ---------------------------------------------------------------------------- */
 #endif
