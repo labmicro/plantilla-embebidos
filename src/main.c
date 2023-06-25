@@ -58,7 +58,7 @@ typedef enum {
 	AJUSTANDO_HORAS_ACTUAL,
 	AJUSTANDO_MINUTOS_ALARMA,
 	AJUSTANDO_HORAS_ALARMA,
-} * modo_t;
+} modo_t;
 
 /* === Private variable declarations =========================================================== */
 
@@ -120,7 +120,6 @@ int main(void) {
 
 	SisTick_Init(REFRESH_TIME);
 	SwitchMode(SIN_CONFIGURAR);
-	DisplayFlashDigits(board->display, 2, 3, 200);
 
 	// -- Infinite loop
 	while (true) {
@@ -139,21 +138,36 @@ int main(void) {
 		if (DigitalInputHasActivated(board->cancel)) {
 			if (ClockSetTime(reloj, entrada, sizeof(entrada))) {
 				SwitchMode(MOSTRANDO_HORA);
-			} else if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
+			} else {
 				SwitchMode(SIN_CONFIGURAR);
 			}
 		}
 
 		if (DigitalInputHasActivated(board->set_time)) {
+			SwitchMode(AJUSTANDO_MINUTOS_ACTUAL);
+			ClockGetTime(reloj, entrada, sizeof(entrada));
+			DisplayWriteBCD(board->display, entrada, sizeof(entrada));
 		}
 
 		if (DigitalInputHasActivated(board->set_alarm)) {
 		}
 
 		if (DigitalInputHasActivated(board->decrement)) {
+			if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
+				entrada[3] = entrada[3] - 1; // falta el carry
+			} else if (modo == AJUSTANDO_HORAS_ACTUAL) {
+				entrada[1] = entrada[1] - 1; // falta el carry
+			}
+			DisplayWriteBCD(board->display, entrada, sizeof(entrada));
 		}
 
 		if (DigitalInputHasActivated(board->increment)) {
+			if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
+				entrada[3] = entrada[3] + 1; // falta el carry
+			} else if (modo == AJUSTANDO_HORAS_ACTUAL) {
+				entrada[1] = entrada[1] + 1; // falta el carry
+			}
+			DisplayWriteBCD(board->display, entrada, sizeof(entrada));
 		}
 
 		// Retardo de tiempo
@@ -162,11 +176,6 @@ int main(void) {
 				__asm("NOP");
 			}
 		}
-
-		// ClockGetTime(reloj, hora, CLOCK_SIZE);
-		//__asm volatile("cpsid i");
-		// DisplayWriteBCD(board->display, hora, CLOCK_SIZE);
-		//__asm volatile("cpsie i");
 	}
 }
 
@@ -184,7 +193,10 @@ void SysTick_Handler(void) {
 		if (modo <= MOSTRANDO_HORA) {
 			ClockGetTime(reloj, hora, CLOCK_SIZE);
 			DisplayWriteBCD(board->display, hora, CLOCK_SIZE);
-			DisplayToggleDot(board->display, 1);
+
+			if (current_value) {
+				DisplayToggleDot(board->display, 1);
+			}
 		}
 	}
 }

@@ -128,8 +128,7 @@ bool ClockRefresh(clock_t reloj, int size) {
 		reloj->hora_actual[POSICION_UNI_HH] = 0;
 	}
 
-	return (reloj->current_tick <= reloj->ticks_per_sec / 2);
-	// return (!(reloj->current_tick));
+	return (reloj->current_tick > reloj->ticks_per_sec / 2);
 }
 
 bool AlarmGetTime(clock_t reloj, uint8_t * alarm_time, int size) {
