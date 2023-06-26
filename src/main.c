@@ -74,6 +74,9 @@ static modo_t modo;
 
 /* === Private variable definitions ============================================================ */
 
+static const uint8_t LIMITE_MINUTOS[] = {5, 9};
+static const uint8_t LIMITE_HORAS[] = {2, 3};
+
 /* === Private function implementation ========================================================= */
 
 /* === Public function implementation ========================================================== */
@@ -85,23 +88,23 @@ void SwitchMode(modo_t valor) {
 		DisplayFlashDigits(board->display, 0, 3, 200);
 		break;
 	case MOSTRANDO_HORA:
-		DisplayFlashDigits(board->display, 0, 0, 0);
+		DisplayFlashDigits(board->display, 0, 0, 50);
 		break;
 	case AJUSTANDO_MINUTOS_ACTUAL:
-		DisplayFlashDigits(board->display, 2, 3, 200);
+		DisplayFlashDigits(board->display, 2, 3, 100);
 		break;
 	case AJUSTANDO_HORAS_ACTUAL:
-		DisplayFlashDigits(board->display, 0, 1, 200);
+		DisplayFlashDigits(board->display, 0, 1, 100);
 		break;
 	case AJUSTANDO_MINUTOS_ALARMA:
-		DisplayFlashDigits(board->display, 2, 3, 200);
+		DisplayFlashDigits(board->display, 2, 3, 50);
 		DisplayToggleDot(board->display, 0);
 		DisplayToggleDot(board->display, 1);
 		DisplayToggleDot(board->display, 2);
 		DisplayToggleDot(board->display, 3);
 		break;
 	case AJUSTANDO_HORAS_ALARMA:
-		DisplayFlashDigits(board->display, 0, 1, 200);
+		DisplayFlashDigits(board->display, 0, 1, 50);
 		DisplayToggleDot(board->display, 0);
 		DisplayToggleDot(board->display, 1);
 		DisplayToggleDot(board->display, 2);
@@ -109,6 +112,30 @@ void SwitchMode(modo_t valor) {
 		break;
 	default:
 		break;
+	}
+}
+
+void IncrementBCD(uint8_t numero[2], const uint8_t limite[2]) {
+	numero[1]++;
+	if (numero[1] > 9) {
+		numero[1] = 0;
+		numero[0]++;
+	}
+	if ((numero[0] > limite[0]) && (numero[1] > limite[1])) {
+		numero[1] = 0;
+		numero[0] = 0;
+	}
+}
+
+void DecrementBCD(uint8_t numero[2], const uint8_t limite[2]) {
+	numero[1]--;
+	if (numero[1] > 9) {
+		numero[1] = 0;
+		numero[0]--;
+	}
+	if ((numero[0] > limite[0]) && (numero[1] > limite[1])) {
+		numero[1] = 0;
+		numero[0] = 0;
 	}
 }
 
@@ -129,14 +156,14 @@ int main(void) {
 		if (DigitalInputHasActivated(board->accept)) {
 			if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
 				SwitchMode(AJUSTANDO_HORAS_ACTUAL);
-			} else if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
+			} else if (modo == AJUSTANDO_HORAS_ACTUAL) {
 				ClockSetTime(reloj, entrada, sizeof(entrada));
 				SwitchMode(MOSTRANDO_HORA);
 			}
 		}
 
 		if (DigitalInputHasActivated(board->cancel)) {
-			if (ClockSetTime(reloj, entrada, sizeof(entrada))) {
+			if (ClockGetTime(reloj, entrada, sizeof(entrada))) {
 				SwitchMode(MOSTRANDO_HORA);
 			} else {
 				SwitchMode(SIN_CONFIGURAR);
@@ -154,18 +181,18 @@ int main(void) {
 
 		if (DigitalInputHasActivated(board->decrement)) {
 			if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
-				entrada[3] = entrada[3] - 1; // falta el carry
+				DecrementBCD(&entrada[2], LIMITE_MINUTOS);
 			} else if (modo == AJUSTANDO_HORAS_ACTUAL) {
-				entrada[1] = entrada[1] - 1; // falta el carry
+				DecrementBCD(&entrada[0], LIMITE_HORAS);
 			}
 			DisplayWriteBCD(board->display, entrada, sizeof(entrada));
 		}
 
 		if (DigitalInputHasActivated(board->increment)) {
 			if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
-				entrada[3] = entrada[3] + 1; // falta el carry
+				IncrementBCD(&entrada[2], LIMITE_MINUTOS);
 			} else if (modo == AJUSTANDO_HORAS_ACTUAL) {
-				entrada[1] = entrada[1] + 1; // falta el carry
+				IncrementBCD(&entrada[0], LIMITE_HORAS);
 			}
 			DisplayWriteBCD(board->display, entrada, sizeof(entrada));
 		}
@@ -194,9 +221,10 @@ void SysTick_Handler(void) {
 			ClockGetTime(reloj, hora, CLOCK_SIZE);
 			DisplayWriteBCD(board->display, hora, CLOCK_SIZE);
 
-			if (current_value) {
+			if (modo == SIN_CONFIGURAR)
+				DisplaySetDot(board->display, 1); // aqui tengo un error, y no logro encontrarlo
+			else if (current_value)
 				DisplayToggleDot(board->display, 1);
-			}
 		}
 	}
 }
