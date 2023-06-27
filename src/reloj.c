@@ -62,6 +62,15 @@ static struct clock_s self[1];
 
 /*---  Private Function Implementation  -------------------------------------------------------- */
 
+bool TriggerAlarm(clock_t reloj) {
+	if (!memcmp(reloj->alarma->hora_alarma_nueva, reloj->hora_actual, ALARM_SIZE)) {
+		if (reloj->alarma->active == true)
+			reloj->alarma->ringing = true;
+	}
+
+	return reloj->alarma->ringing;
+}
+
 /*---  Public Function Implementation  --------------------------------------------------------- */
 
 clock_t ClockCreate(int tics_per_second) {
@@ -152,15 +161,6 @@ bool DeactivateAlarm(clock_t reloj) {
 	reloj->alarma->active = false;
 	reloj->alarma->ringing = false;
 	return reloj->alarma->active;
-}
-
-bool TriggerAlarm(clock_t reloj) {
-	if (!memcmp(reloj->alarma->hora_alarma_nueva, reloj->hora_actual, ALARM_SIZE)) {
-		if (reloj->alarma->active == true)
-			reloj->alarma->ringing = true;
-	}
-
-	return reloj->alarma->ringing;
 }
 
 bool PostponeAlarm(clock_t reloj) {
