@@ -52,7 +52,7 @@
 /* === Private data type declarations ========================================================== */
 
 typedef enum {
-	SIN_CONFIGURAR,
+	HORA_SIN_CONFIGURAR,
 	MOSTRANDO_HORA,
 	AJUSTANDO_MINUTOS_ACTUAL,
 	AJUSTANDO_HORAS_ACTUAL,
@@ -84,11 +84,11 @@ static const uint8_t LIMITE_HORAS[] = {2, 3};
 void SwitchMode(modo_t valor) {
 	modo = valor;
 	switch (modo) {
-	case SIN_CONFIGURAR:
+	case HORA_SIN_CONFIGURAR:
 		DisplayFlashDigits(board->display, 0, 3, 200);
 		break;
 	case MOSTRANDO_HORA:
-		DisplayFlashDigits(board->display, 0, 0, 50);
+		DisplayFlashDigits(board->display, 0, 0, 0);
 		break;
 	case AJUSTANDO_MINUTOS_ACTUAL:
 		DisplayFlashDigits(board->display, 2, 3, 100);
@@ -98,17 +98,9 @@ void SwitchMode(modo_t valor) {
 		break;
 	case AJUSTANDO_MINUTOS_ALARMA:
 		DisplayFlashDigits(board->display, 2, 3, 50);
-		DisplayToggleDot(board->display, 0);
-		DisplayToggleDot(board->display, 1);
-		DisplayToggleDot(board->display, 2);
-		DisplayToggleDot(board->display, 3);
 		break;
 	case AJUSTANDO_HORAS_ALARMA:
 		DisplayFlashDigits(board->display, 0, 1, 50);
-		DisplayToggleDot(board->display, 0);
-		DisplayToggleDot(board->display, 1);
-		DisplayToggleDot(board->display, 2);
-		DisplayToggleDot(board->display, 3);
 		break;
 	default:
 		break;
@@ -119,23 +111,25 @@ void IncrementBCD(uint8_t numero[2], const uint8_t limite[2]) {
 	numero[1]++;
 	if (numero[1] > 9) {
 		numero[1] = 0;
-		numero[0]++;
-	}
-	if ((numero[0] > limite[0]) && (numero[1] > limite[1])) {
-		numero[1] = 0;
-		numero[0] = 0;
+		if (numero[0] < limite[0])
+			numero[0]++;
+		else {
+			numero[1] = 0;
+			numero[0] = 0;
+		}
 	}
 }
 
 void DecrementBCD(uint8_t numero[2], const uint8_t limite[2]) {
 	numero[1]--;
 	if (numero[1] > 9) {
-		numero[1] = 0;
-		numero[0]--;
-	}
-	if ((numero[0] > limite[0]) && (numero[1] > limite[1])) {
-		numero[1] = 0;
-		numero[0] = 0;
+		numero[1] = 9;
+		if (numero[0] > 0)
+			numero[0]--;
+		else {
+			numero[0] = limite[0];
+			numero[1] = limite[1];
+		}
 	}
 }
 
@@ -146,7 +140,7 @@ int main(void) {
 	board = BoardCreate();
 
 	SisTick_Init(REFRESH_TIME);
-	SwitchMode(SIN_CONFIGURAR);
+	SwitchMode(HORA_SIN_CONFIGURAR);
 
 	// -- Infinite loop
 	while (true) {
@@ -154,19 +148,32 @@ int main(void) {
 		// -------------------------
 
 		if (DigitalInputHasActivated(board->accept)) {
-			if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
+			if (modo == MOSTRANDO_HORA) {
+				if (!AlarmGetTime(reloj, entrada, sizeof(entrada)))
+					ActivateAlarm(reloj);
+			} else if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
 				SwitchMode(AJUSTANDO_HORAS_ACTUAL);
 			} else if (modo == AJUSTANDO_HORAS_ACTUAL) {
 				ClockSetTime(reloj, entrada, sizeof(entrada));
+				SwitchMode(MOSTRANDO_HORA);
+			} else if (modo == AJUSTANDO_MINUTOS_ALARMA) {
+				SwitchMode(AJUSTANDO_HORAS_ALARMA);
+			} else if (modo == AJUSTANDO_HORAS_ALARMA) {
+				AlarmSetTime(reloj, entrada, sizeof(entrada));
 				SwitchMode(MOSTRANDO_HORA);
 			}
 		}
 
 		if (DigitalInputHasActivated(board->cancel)) {
-			if (ClockGetTime(reloj, entrada, sizeof(entrada))) {
-				SwitchMode(MOSTRANDO_HORA);
+			if (modo == MOSTRANDO_HORA) {
+				if (AlarmGetTime(reloj, entrada, sizeof(entrada)))
+					DeactivateAlarm(reloj);
 			} else {
-				SwitchMode(SIN_CONFIGURAR);
+				if (ClockGetTime(reloj, entrada, sizeof(entrada))) {
+					SwitchMode(MOSTRANDO_HORA);
+				} else {
+					SwitchMode(HORA_SIN_CONFIGURAR);
+				}
 			}
 		}
 
@@ -177,24 +184,40 @@ int main(void) {
 		}
 
 		if (DigitalInputHasActivated(board->set_alarm)) {
+			SwitchMode(AJUSTANDO_MINUTOS_ALARMA);
+			AlarmGetTime(reloj, entrada, sizeof(entrada));
+			DisplayWriteBCD(board->display, entrada, sizeof(entrada));
+			DisplayToggleDots(board->display, 0, 3);
 		}
 
 		if (DigitalInputHasActivated(board->decrement)) {
-			if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
+			if ((modo == AJUSTANDO_MINUTOS_ACTUAL) || (modo == AJUSTANDO_MINUTOS_ALARMA)) {
 				DecrementBCD(&entrada[2], LIMITE_MINUTOS);
-			} else if (modo == AJUSTANDO_HORAS_ACTUAL) {
+			} else if ((modo == AJUSTANDO_HORAS_ACTUAL) || (modo == AJUSTANDO_HORAS_ALARMA)) {
 				DecrementBCD(&entrada[0], LIMITE_HORAS);
 			}
-			DisplayWriteBCD(board->display, entrada, sizeof(entrada));
+
+			if ((modo == AJUSTANDO_MINUTOS_ACTUAL) || (modo == AJUSTANDO_HORAS_ACTUAL)) {
+				DisplayWriteBCD(board->display, entrada, sizeof(entrada));
+			} else if ((modo == AJUSTANDO_HORAS_ALARMA) || (modo == AJUSTANDO_MINUTOS_ALARMA)) {
+				DisplayWriteBCD(board->display, entrada, sizeof(entrada));
+				DisplayToggleDots(board->display, 0, 3);
+			}
 		}
 
 		if (DigitalInputHasActivated(board->increment)) {
-			if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
+			if ((modo == AJUSTANDO_MINUTOS_ACTUAL) || (modo == AJUSTANDO_MINUTOS_ALARMA)) {
 				IncrementBCD(&entrada[2], LIMITE_MINUTOS);
-			} else if (modo == AJUSTANDO_HORAS_ACTUAL) {
+			} else if ((modo == AJUSTANDO_HORAS_ACTUAL) || (modo == AJUSTANDO_HORAS_ALARMA)) {
 				IncrementBCD(&entrada[0], LIMITE_HORAS);
 			}
-			DisplayWriteBCD(board->display, entrada, sizeof(entrada));
+
+			if ((modo == AJUSTANDO_MINUTOS_ACTUAL) || (modo == AJUSTANDO_HORAS_ACTUAL)) {
+				DisplayWriteBCD(board->display, entrada, sizeof(entrada));
+			} else if ((modo == AJUSTANDO_HORAS_ALARMA) || (modo == AJUSTANDO_MINUTOS_ALARMA)) {
+				DisplayWriteBCD(board->display, entrada, sizeof(entrada));
+				DisplayToggleDots(board->display, 0, 3);
+			}
 		}
 
 		// Retardo de tiempo
@@ -207,25 +230,29 @@ int main(void) {
 }
 
 void SysTick_Handler(void) {
-	static bool last_value = false;
-	bool current_value;
+	static uint16_t contador = 0;
 	uint8_t hora[CLOCK_SIZE];
 
 	DisplayRefresh(board->display);
-	current_value = ClockRefresh(reloj, CLOCK_SIZE);
+	ClockRefresh(reloj, CLOCK_SIZE);
 
-	if (current_value != last_value) {
-		last_value = current_value;
+	contador = (contador + 1) % 1000;
 
-		if (modo <= MOSTRANDO_HORA) {
-			ClockGetTime(reloj, hora, CLOCK_SIZE);
-			DisplayWriteBCD(board->display, hora, CLOCK_SIZE);
+	if (modo <= MOSTRANDO_HORA) {
+		ClockGetTime(reloj, hora, CLOCK_SIZE);
+		DisplayWriteBCD(board->display, hora, CLOCK_SIZE);
 
-			if (modo == SIN_CONFIGURAR)
-				DisplaySetDot(board->display, 1); // aqui tengo un error, y no logro encontrarlo
-			else if (current_value)
-				DisplayToggleDot(board->display, 1);
-		}
+		if (contador > 500)
+			DisplayToggleDots(board->display, 1, 1);
+
+		if (AlarmGetTime(reloj, hora, sizeof(hora)))
+			DisplayToggleDots(board->display, 3, 3);
+
+		if (TriggerAlarm(reloj))
+			DisplaySetDot(board->display, 0);
+
+		// if (modo == HORA_SIN_CONFIGURAR)
+		//	DisplaySetDot(board->display, 1); // aqui tengo un error, y no logro encontrarlo
 	}
 }
 
