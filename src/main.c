@@ -71,6 +71,7 @@ void SisTick_Init(uint32_t time);
 static board_t board;
 static clock_t reloj;
 static modo_t modo;
+// static modo_t ultimo_modo;
 
 /* === Private variable definitions ============================================================ */
 
@@ -135,10 +136,15 @@ void DecrementBCD(uint8_t numero[2], const uint8_t limite[2]) {
 	}
 }
 
+void TriggerAbstraction(clock_t clock) {
+	DigitalOutputActivate(board->led_RGB_azul);
+	DisplaySetDot(board->display, 0);
+}
+
 int main(void) {
 	uint8_t entrada[ALARM_SIZE];
 
-	reloj = ClockCreate(REFRESH_TIME);
+	reloj = ClockCreate(REFRESH_TIME / 10, TriggerAbstraction);
 	board = BoardCreate();
 
 	SisTick_Init(REFRESH_TIME);
@@ -151,7 +157,9 @@ int main(void) {
 
 		if (DigitalInputHasActivated(board->accept)) {
 			if (modo == MOSTRANDO_HORA) {
-				if (!AlarmGetTime(reloj, entrada, sizeof(entrada)))
+				if (IsAlarmRinging(reloj))
+					PostponeAlarm(reloj);
+				else if (!AlarmGetTime(reloj, entrada, sizeof(entrada)))
 					ActivateAlarm(reloj);
 			} else if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
 				SwitchMode(AJUSTANDO_HORAS_ACTUAL);
@@ -249,9 +257,6 @@ void SysTick_Handler(void) {
 
 		if (AlarmGetTime(reloj, hora, sizeof(hora)))
 			DisplayToggleDots(board->display, 3, 3);
-
-		if (TriggerAlarm(reloj))
-			DisplaySetDot(board->display, 0);
 	}
 }
 
