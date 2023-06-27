@@ -29,14 +29,15 @@ struct alarm_s {
 	uint8_t hora_alarma[ALARM_SIZE];
 	uint8_t hora_alarma_nueva[ALARM_SIZE];
 	bool active;
-	bool ringing;
-	bool canceled;
+	bool ringing; // creo que no lo voy a usar
+	bool valida;
 };
 
 struct clock_s {
 	uint8_t hora_actual[CLOCK_SIZE];
 	uint32_t ticks_per_sec;
 	uint32_t current_tick;
+	clock_event_t evento;
 	bool valida;
 
 	struct alarm_s alarma[1];
@@ -66,6 +67,7 @@ bool TriggerAlarm(clock_t reloj) {
 	if (!memcmp(reloj->alarma->hora_alarma_nueva, reloj->hora_actual, ALARM_SIZE)) {
 		if (reloj->alarma->active == true)
 			reloj->alarma->ringing = true;
+		reloj->evento();
 	}
 
 	return reloj->alarma->ringing;
@@ -73,9 +75,10 @@ bool TriggerAlarm(clock_t reloj) {
 
 /*---  Public Function Implementation  --------------------------------------------------------- */
 
-clock_t ClockCreate(int tics_per_second) {
+clock_t ClockCreate(int tics_per_second, clock_event_t event_handler) {
 	memset(self, 0, sizeof(self));
 	self->ticks_per_sec = tics_per_second;
+	self->evento = event_handler;
 
 	return self;
 }
@@ -89,6 +92,7 @@ bool ClockGetTime(clock_t reloj, uint8_t * hora, int size) {
 bool ClockSetTime(clock_t reloj, const uint8_t * hora, int size) {
 	memcpy(reloj->hora_actual, hora, size);
 	reloj->valida = true;
+
 	return reloj->valida;
 }
 
@@ -142,40 +146,52 @@ bool ClockRefresh(clock_t reloj, int size) {
 
 bool AlarmGetTime(clock_t reloj, uint8_t * alarm_time, int size) {
 	memcpy(alarm_time, reloj->alarma->hora_alarma, size);
+
 	return reloj->alarma->active;
-	// return true;
 }
 
 bool AlarmSetTime(clock_t reloj, const uint8_t * alarm_time, int size) {
 	memcpy(reloj->alarma->hora_alarma, alarm_time, size);
 	memcpy(reloj->alarma->hora_alarma_nueva, alarm_time, size);
-	return reloj->alarma->active;
+
+	reloj->alarma->valida = true;
+
+	return reloj->alarma->valida;
 }
 
 bool ActivateAlarm(clock_t reloj) {
-	reloj->alarma->active = true;
+	if (reloj->alarma->valida == true)
+		reloj->alarma->active = true;
+
 	return reloj->alarma->active;
 }
 
 bool DeactivateAlarm(clock_t reloj) {
 	reloj->alarma->active = false;
 	reloj->alarma->ringing = false;
+
 	return reloj->alarma->active;
 }
 
 bool PostponeAlarm(clock_t reloj) {
 	if (reloj->alarma->ringing == true) {
 		reloj->alarma->ringing = false;
-		reloj->alarma->hora_alarma_nueva[POSICION_UNI_MM] += 1; // posterga 1 minuto
+		reloj->alarma->hora_alarma_nueva[POSICION_UNI_MM] += 1; // posterga 5 minuto
 	}
+
 	return reloj->alarma->ringing;
 } // falta la logica para que la postergada tenga hora correcta
+
+bool IsAlarmRinging(clock_t reloj) {
+	return reloj->alarma->ringing;
+}
 
 bool CancelAlarm(clock_t reloj) {
 	if (reloj->alarma->ringing == true) {
 		reloj->alarma->ringing = false;
 		memcpy(reloj->alarma->hora_alarma_nueva, reloj->alarma->hora_alarma, ALARM_SIZE);
 	}
+
 	return true;
 }
 /*---  End of File  ---------------------------------------------------------------------------- */
