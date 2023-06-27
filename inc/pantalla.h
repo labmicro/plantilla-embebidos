@@ -115,6 +115,15 @@ void DisplayFlashDigits(display_t display, uint8_t from, uint8_t to, uint16_t fr
 void DisplayToggleDot(display_t display, uint8_t position);
 
 /**
+ * @brief Funcion para conmutar el estado de varios puntos del display
+ *
+ * @param display Puntero al descriptor de la pantalla
+ * @param toggle_from Posicion del primer digito
+ * @param toggle_to Posicion del ultimo digito
+ */
+void DisplayToggleDots(display_t display, uint8_t toggle_from, uint8_t toggle_to);
+
+/**
  * @brief Funcion para setear el estado del punto del display
  *
  * @param display Puntero al descriptor de la pantalla
