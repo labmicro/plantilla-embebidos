@@ -71,7 +71,6 @@ void SisTick_Init(uint32_t time);
 static board_t board;
 static clock_t reloj;
 static modo_t modo;
-// static modo_t ultimo_modo;
 
 /* === Private variable definitions ============================================================ */
 
@@ -137,8 +136,10 @@ void DecrementBCD(uint8_t numero[2], const uint8_t limite[2]) {
 }
 
 void TriggerAbstraction(clock_t clock) {
-	DigitalOutputActivate(board->led_RGB_azul);
-	DisplaySetDot(board->display, 0);
+	if (IsAlarmRinging(reloj))
+		DigitalOutputActivate(board->led_RGB_azul);
+	else
+		DigitalOutputDeactivate(board->led_RGB_azul);
 }
 
 int main(void) {

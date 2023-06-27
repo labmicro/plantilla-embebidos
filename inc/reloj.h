@@ -27,7 +27,7 @@ typedef struct clock_s * clock_t;
 typedef struct alarm_s * alarm_t;
 
 // Funcion
-typedef void (*clock_event_t)(void);
+typedef void (*clock_event_t)();
 
 /*---  Public Data Declaration  ---------------------------------------------------------------- */
 
@@ -118,7 +118,7 @@ bool DeactivateAlarm(clock_t reloj);
  * @return true Alarma sonando
  * @return false Alarma sin sonar
  */
-bool TriggerAlarm(clock_t reloj);
+void TriggerAlarm(clock_t reloj);
 
 /**
  * @brief Metodo para posponer la alarma 5 minutos

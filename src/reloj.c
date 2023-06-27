@@ -63,14 +63,12 @@ static struct clock_s self[1];
 
 /*---  Private Function Implementation  -------------------------------------------------------- */
 
-bool TriggerAlarm(clock_t reloj) {
+void TriggerAlarm(clock_t reloj) {
 	if (!memcmp(reloj->alarma->hora_alarma_nueva, reloj->hora_actual, ALARM_SIZE)) {
 		if (reloj->alarma->active == true)
 			reloj->alarma->ringing = true;
-		reloj->evento();
+		reloj->evento(); // no esta correctamente implementado
 	}
-
-	return reloj->alarma->ringing;
 }
 
 /*---  Public Function Implementation  --------------------------------------------------------- */
@@ -169,6 +167,7 @@ bool ActivateAlarm(clock_t reloj) {
 bool DeactivateAlarm(clock_t reloj) {
 	reloj->alarma->active = false;
 	reloj->alarma->ringing = false;
+	reloj->evento(); // no esta correctamente implementado
 
 	return reloj->alarma->active;
 }
@@ -176,6 +175,8 @@ bool DeactivateAlarm(clock_t reloj) {
 bool PostponeAlarm(clock_t reloj) {
 	if (reloj->alarma->ringing == true) {
 		reloj->alarma->ringing = false;
+		reloj->evento(); // no esta correctamente implementado
+
 		reloj->alarma->hora_alarma_nueva[POSICION_UNI_MM] += 1; // posterga 5 minuto
 	}
 
@@ -189,6 +190,8 @@ bool IsAlarmRinging(clock_t reloj) {
 bool CancelAlarm(clock_t reloj) {
 	if (reloj->alarma->ringing == true) {
 		reloj->alarma->ringing = false;
+		reloj->evento(); // no esta correctamente implementado
+
 		memcpy(reloj->alarma->hora_alarma_nueva, reloj->alarma->hora_alarma, ALARM_SIZE);
 	}
 
