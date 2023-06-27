@@ -26,6 +26,9 @@ typedef struct clock_s * clock_t;
 // Puntero a la estructura de tipo alarm_s
 typedef struct alarm_s * alarm_t;
 
+// Funcion
+typedef void (*clock_event_t)(void);
+
 /*---  Public Data Declaration  ---------------------------------------------------------------- */
 
 /*---  Public Function Declaration  ------------------------------------------------------------ */
@@ -36,7 +39,7 @@ typedef struct alarm_s * alarm_t;
  * @param tics_per_second Cantidad de pulsos de reloj para aumentar una cuenta.
  * @return clock_t Puntero al descriptor del reloj
  */
-clock_t ClockCreate(int tics_per_second);
+clock_t ClockCreate(int tics_per_second, clock_event_t event_handler);
 
 /**
  * @brief Metodo para mostrar la hora del reloj.
@@ -125,6 +128,15 @@ bool TriggerAlarm(clock_t reloj);
  * @return false Alarma sin sonar
  */
 bool PostponeAlarm(clock_t reloj);
+
+/**
+ * @brief Metodo para mostrar si la alarma esta sonando
+ *
+ * @param reloj Puntero al descriptor del reloj
+ * @return true Alarma sonando
+ * @return false Alarma sin sonar
+ */
+bool IsAlarmRinging(clock_t reloj);
 
 /**
  * @brief Metodo para cancelar la alarma hasta el dia siguiente
