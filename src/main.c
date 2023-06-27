@@ -109,19 +109,21 @@ void SwitchMode(modo_t valor) {
 
 void IncrementBCD(uint8_t numero[2], const uint8_t limite[2]) {
 	numero[1]++;
+
+	if (numero[1] > limite[1] && numero[0] >= limite[0]) {
+		numero[1] = 0;
+		numero[0] = 0;
+	}
+
 	if (numero[1] > 9) {
 		numero[1] = 0;
-		if (numero[0] < limite[0])
-			numero[0]++;
-		else {
-			numero[1] = 0;
-			numero[0] = 0;
-		}
+		numero[0]++;
 	}
 }
 
 void DecrementBCD(uint8_t numero[2], const uint8_t limite[2]) {
 	numero[1]--;
+
 	if (numero[1] > 9) {
 		numero[1] = 9;
 		if (numero[0] > 0)
@@ -250,9 +252,6 @@ void SysTick_Handler(void) {
 
 		if (TriggerAlarm(reloj))
 			DisplaySetDot(board->display, 0);
-
-		// if (modo == HORA_SIN_CONFIGURAR)
-		//	DisplaySetDot(board->display, 1); // aqui tengo un error, y no logro encontrarlo
 	}
 }
 
