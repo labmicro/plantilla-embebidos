@@ -49,6 +49,8 @@
 
 #define REFRESH_TIME 1000
 #define SNOOZE_TIME 5
+#define CONFIG_TIME 1200
+#define TIME_TO_CLEAN CONFIG_TIME * 3
 
 /* === Private data type declarations ========================================================== */
 
@@ -78,8 +80,9 @@ static modo_t modo;
 static const uint8_t LIMITE_MINUTOS[] = {5, 9};
 static const uint8_t LIMITE_HORAS[] = {2, 3};
 
-static bool set_config = 0;
-static uint16_t contador_set_config = 1;
+// static bool set_config = 0;
+static uint16_t contador_set_config = CONFIG_TIME;
+static uint16_t tiempo_muerto = TIME_TO_CLEAN;
 
 /* === Private function implementation ========================================================= */
 
@@ -87,10 +90,10 @@ static uint16_t contador_set_config = 1;
 
 void CounterSetRefresh(bool button_state, uint16_t count) {
 	if (button_state == 1) {
-		if (contador_set_config != 0 || contador_set_config > count)
-			contador_set_config = (contador_set_config + 1) % count;
+		if (contador_set_config > 0)
+			contador_set_config -= 1;
 	} else
-		contador_set_config = 1;
+		contador_set_config = count;
 }
 
 void SwitchMode(modo_t valor) {
@@ -169,6 +172,8 @@ int main(void) {
 		// -------------------------
 
 		if (DigitalInputHasActivated(board->accept)) {
+			tiempo_muerto = TIME_TO_CLEAN;
+
 			if (modo == MOSTRANDO_HORA) {
 				if (IsAlarmRinging(reloj))
 					SnoozeAlarm(reloj, SNOOZE_TIME);
@@ -188,6 +193,8 @@ int main(void) {
 		}
 
 		if (DigitalInputHasActivated(board->cancel)) {
+			tiempo_muerto = TIME_TO_CLEAN;
+
 			if (modo == MOSTRANDO_HORA) {
 				if (AlarmGetTime(reloj, entrada, sizeof(entrada)))
 					DeactivateAlarm(reloj);
@@ -200,27 +207,26 @@ int main(void) {
 			}
 		}
 
-		if (DigitalInputHasActivated(board->set_time)) {
-			set_config = 1;
-			// if (contador_set_config == 0) {
-			SwitchMode(AJUSTANDO_MINUTOS_ACTUAL);
-			ClockGetTime(reloj, entrada, sizeof(entrada));
-			DisplayWriteBCD(board->display, entrada, sizeof(entrada));
-			//}
+		if (DigitalInputRead(board->set_time)) {
+			if (contador_set_config == 0) {
+				SwitchMode(AJUSTANDO_MINUTOS_ACTUAL);
+				ClockGetTime(reloj, entrada, sizeof(entrada));
+				DisplayWriteBCD(board->display, entrada, sizeof(entrada));
+			}
 		}
 
-		if (DigitalInputHasDeactivated(board->set_time)) {
-			set_config = 0;
-		}
-
-		if (DigitalInputHasActivated(board->set_alarm)) {
-			SwitchMode(AJUSTANDO_MINUTOS_ALARMA);
-			AlarmGetTime(reloj, entrada, sizeof(entrada));
-			DisplayWriteBCD(board->display, entrada, sizeof(entrada));
-			DisplayToggleDots(board->display, 0, 3);
+		if (DigitalInputRead(board->set_alarm)) {
+			if (contador_set_config == 0) {
+				SwitchMode(AJUSTANDO_MINUTOS_ALARMA);
+				AlarmGetTime(reloj, entrada, sizeof(entrada));
+				DisplayWriteBCD(board->display, entrada, sizeof(entrada));
+				DisplayToggleDots(board->display, 0, 3);
+			}
 		}
 
 		if (DigitalInputHasActivated(board->decrement)) {
+			tiempo_muerto = TIME_TO_CLEAN;
+
 			if ((modo == AJUSTANDO_MINUTOS_ACTUAL) || (modo == AJUSTANDO_MINUTOS_ALARMA)) {
 				DecrementBCD(&entrada[2], LIMITE_MINUTOS);
 			} else if ((modo == AJUSTANDO_HORAS_ACTUAL) || (modo == AJUSTANDO_HORAS_ALARMA)) {
@@ -236,6 +242,8 @@ int main(void) {
 		}
 
 		if (DigitalInputHasActivated(board->increment)) {
+			tiempo_muerto = TIME_TO_CLEAN;
+
 			if ((modo == AJUSTANDO_MINUTOS_ACTUAL) || (modo == AJUSTANDO_MINUTOS_ALARMA)) {
 				IncrementBCD(&entrada[2], LIMITE_MINUTOS);
 			} else if ((modo == AJUSTANDO_HORAS_ACTUAL) || (modo == AJUSTANDO_HORAS_ALARMA)) {
@@ -267,8 +275,7 @@ void SysTick_Handler(void) {
 	ClockRefresh(reloj, CLOCK_SIZE);
 
 	contador = (contador + 1) % 1000;
-
-	CounterSetRefresh(set_config, 3000);
+	CounterSetRefresh(DigitalInputRead(board->set_time) || DigitalInputRead(board->set_alarm), 1200);
 
 	if (modo <= MOSTRANDO_HORA) {
 		ClockGetTime(reloj, hora, CLOCK_SIZE);
@@ -279,6 +286,10 @@ void SysTick_Handler(void) {
 
 		if (AlarmGetTime(reloj, hora, sizeof(hora)))
 			DisplayToggleDots(board->display, 3, 3);
+	} else {
+		if (tiempo_muerto == 0) {
+			modo = HORA_SIN_CONFIGURAR;
+		}
 	}
 }
 
