@@ -124,10 +124,11 @@ void TriggerAlarm(clock_t reloj);
  * @brief Metodo para posponer la alarma 5 minutos
  *
  * @param reloj Puntero al descriptor del reloj
+ * @param time Tiempo que se posterga la alarma
  * @return true Alarma sonando
  * @return false Alarma sin sonar
  */
-bool PostponeAlarm(clock_t reloj);
+bool SnoozeAlarm(clock_t reloj, int time);
 
 /**
  * @brief Metodo para mostrar si la alarma esta sonando

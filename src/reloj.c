@@ -113,7 +113,7 @@ bool ClockRefresh(clock_t reloj, int size) {
 	if (reloj->hora_actual[POSICION_DEC_SS] >= LIMITE_DECENA) {
 		reloj->hora_actual[POSICION_DEC_SS] = 0;
 		reloj->hora_actual[POSICION_UNI_MM]++;
-		TriggerAlarm(reloj);
+		// TriggerAlarm(reloj);
 	}
 
 	// sumo decena minutos
@@ -139,7 +139,9 @@ bool ClockRefresh(clock_t reloj, int size) {
 		reloj->hora_actual[POSICION_UNI_HH] = 0;
 	}
 
-	return (reloj->current_tick > reloj->ticks_per_sec / 2);
+	TriggerAlarm(reloj); // espero que toda la hora se acomode para evaluar
+
+	return (reloj->current_tick < reloj->ticks_per_sec / 2);
 }
 
 bool AlarmGetTime(clock_t reloj, uint8_t * alarm_time, int size) {
@@ -172,12 +174,36 @@ bool DeactivateAlarm(clock_t reloj) {
 	return reloj->alarma->active;
 }
 
-bool PostponeAlarm(clock_t reloj) {
+bool SnoozeAlarm(clock_t reloj, int time) {
 	if (reloj->alarma->ringing == true) {
 		reloj->alarma->ringing = false;
 		reloj->evento(); // no esta correctamente implementado
 
-		reloj->alarma->hora_alarma_nueva[POSICION_UNI_MM] += 1; // posterga 5 minuto
+		reloj->alarma->hora_alarma_nueva[POSICION_UNI_MM] += time; // posterga 5 minutos
+
+		if (reloj->alarma->hora_alarma_nueva[POSICION_UNI_MM] >= LIMITE_UNIDAD) {
+			reloj->alarma->hora_alarma_nueva[POSICION_DEC_MM] += 1;
+			reloj->alarma->hora_alarma_nueva[POSICION_UNI_MM] =
+				reloj->alarma->hora_alarma_nueva[POSICION_UNI_MM] % LIMITE_UNIDAD;
+		} // corrijo decena minutos
+
+		if (reloj->alarma->hora_alarma_nueva[POSICION_DEC_MM] >= LIMITE_DECENA) {
+			reloj->alarma->hora_alarma_nueva[POSICION_UNI_HH] += 1;
+			reloj->alarma->hora_alarma_nueva[POSICION_DEC_MM] =
+				reloj->alarma->hora_alarma_nueva[POSICION_DEC_MM] % LIMITE_DECENA;
+		} // corrijo unidad horas
+
+		if (reloj->alarma->hora_alarma_nueva[POSICION_UNI_HH] >= LIMITE_UNIDAD) {
+			reloj->alarma->hora_alarma_nueva[POSICION_DEC_HH] += 1;
+			reloj->alarma->hora_alarma_nueva[POSICION_UNI_HH] =
+				reloj->alarma->hora_alarma_nueva[POSICION_UNI_HH] % LIMITE_UNIDAD;
+		} // corrijo decena horas
+
+		if (reloj->alarma->hora_alarma_nueva[POSICION_UNI_HH] >= 4 &&
+			reloj->alarma->hora_alarma_nueva[POSICION_DEC_HH] >= 2) {
+			reloj->alarma->hora_alarma_nueva[POSICION_UNI_HH] = 0;
+			reloj->alarma->hora_alarma_nueva[POSICION_DEC_HH] = 0;
+		} // reinicio
 	}
 
 	return reloj->alarma->ringing;
