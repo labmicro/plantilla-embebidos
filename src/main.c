@@ -47,10 +47,10 @@
 
 /* === Macros definitions * ==================================================================== */
 
-#define REFRESH_TIME 1000
-#define SNOOZE_TIME 5
-#define CONFIG_TIME 1200
-#define TIME_TO_CLEAN CONFIG_TIME * 3
+#define REFRESH_TIME 1000			   //! Cuenta del Systick
+#define SNOOZE_TIME 5				   //! Tiempo que se posterga la alarma
+#define TIME_TO_SET 3000			   //! Tiempo que se pulsa el boton
+#define TIME_TO_CLEAN TIME_TO_SET * 10 //! Tiempo para reiniciar el estado
 
 /* === Private data type declarations ========================================================== */
 
@@ -81,20 +81,29 @@ static const uint8_t LIMITE_MINUTOS[] = {5, 9};
 static const uint8_t LIMITE_HORAS[] = {2, 3};
 
 // static bool set_config = 0;
-static uint16_t contador_set_config = CONFIG_TIME;
+static uint16_t contador_set_config = TIME_TO_SET;
 static uint16_t tiempo_muerto = TIME_TO_CLEAN;
 
 /* === Private function implementation ========================================================= */
 
-/* === Public function implementation ========================================================== */
-
-void CounterSetRefresh(bool button_state, uint16_t count) {
+/**
+ * @brief Funcion para contar el tiempo de boton presionado
+ *
+ * @param button_state estado del boton que se lee
+ * @param max_count tiempo limite de cuenta
+ */
+void CounterSetRefresh(bool button_state, uint16_t max_count) {
 	if (button_state == 1) {
 		if (contador_set_config > 0)
 			contador_set_config -= 1;
-	} else
-		contador_set_config = count;
+	} else {
+		contador_set_config = max_count;
+		if (tiempo_muerto > 0)
+			tiempo_muerto -= 1;
+	}
 }
+
+/* === Public function implementation ========================================================== */
 
 void SwitchMode(modo_t valor) {
 	modo = valor;
@@ -208,6 +217,8 @@ int main(void) {
 		}
 
 		if (DigitalInputRead(board->set_time)) {
+			tiempo_muerto = TIME_TO_CLEAN;
+
 			if (contador_set_config == 0) {
 				SwitchMode(AJUSTANDO_MINUTOS_ACTUAL);
 				ClockGetTime(reloj, entrada, sizeof(entrada));
@@ -216,6 +227,8 @@ int main(void) {
 		}
 
 		if (DigitalInputRead(board->set_alarm)) {
+			tiempo_muerto = TIME_TO_CLEAN;
+
 			if (contador_set_config == 0) {
 				SwitchMode(AJUSTANDO_MINUTOS_ALARMA);
 				AlarmGetTime(reloj, entrada, sizeof(entrada));
@@ -275,7 +288,7 @@ void SysTick_Handler(void) {
 	ClockRefresh(reloj, CLOCK_SIZE);
 
 	contador = (contador + 1) % 1000;
-	CounterSetRefresh(DigitalInputRead(board->set_time) || DigitalInputRead(board->set_alarm), 1200);
+	CounterSetRefresh(DigitalInputRead(board->set_time) || DigitalInputRead(board->set_alarm), TIME_TO_SET);
 
 	if (modo <= MOSTRANDO_HORA) {
 		ClockGetTime(reloj, hora, CLOCK_SIZE);
@@ -288,7 +301,7 @@ void SysTick_Handler(void) {
 			DisplayToggleDots(board->display, 3, 3);
 	} else {
 		if (tiempo_muerto == 0) {
-			modo = HORA_SIN_CONFIGURAR;
+			SwitchMode(HORA_SIN_CONFIGURAR);
 		}
 	}
 }
