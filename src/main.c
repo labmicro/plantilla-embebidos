@@ -3,6 +3,8 @@
  * Universidad Nacional de Tucuman
  * http://www.microprocesadores.unt.edu.ar/
  * Copyright 2022, Esteban Volentini <evolentini@herrera.unt.edu.ar>
+ * Modificacion Joel Jassan
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,163 +40,275 @@
  ** \brief Sample projects to use as a starting point
  ** @{ */
 
-/* === Headers files inclusions =============================================================== */
+/* === Headers files inclusions * =============================================================== */
 
-#include "chip.h"
+#include "bsp.h"
+#include "reloj.h"
 #include <stdbool.h>
+#include <stddef.h>
 
-/* === Macros definitions ====================================================================== */
+/* === Macros definitions * ==================================================================== */
 
-#define LED_R_PORT 2
-#define LED_R_PIN 0
-#define LED_R_FUNC SCU_MODE_FUNC4
-#define LED_R_GPIO 5
-#define LED_R_BIT 0
-
-#define LED_G_PORT 2
-#define LED_G_PIN 1
-#define LED_G_FUNC SCU_MODE_FUNC4
-#define LED_G_GPIO 5
-#define LED_G_BIT 1
-
-#define LED_B_PORT 2
-#define LED_B_PIN 2
-#define LED_B_FUNC SCU_MODE_FUNC4
-#define LED_B_GPIO 5
-#define LED_B_BIT 2
-
-#define LED_1_PORT 2
-#define LED_1_PIN 10
-#define LED_1_FUNC SCU_MODE_FUNC0
-#define LED_1_GPIO 0
-#define LED_1_BIT 14
-
-#define LED_2_PORT 2
-#define LED_2_PIN 11
-#define LED_2_FUNC SCU_MODE_FUNC0
-#define LED_2_GPIO 1
-#define LED_2_BIT 11
-
-#define LED_3_PORT 2
-#define LED_3_PIN 12
-#define LED_3_FUNC SCU_MODE_FUNC0
-#define LED_3_GPIO 1
-#define LED_3_BIT 12
-
-#define TEC_1_PORT 1
-#define TEC_1_PIN 0
-#define TEC_1_FUNC SCU_MODE_FUNC0
-#define TEC_1_GPIO 0
-#define TEC_1_BIT 4
-
-#define TEC_2_PORT 1
-#define TEC_2_PIN 1
-#define TEC_2_FUNC SCU_MODE_FUNC0
-#define TEC_2_GPIO 0
-#define TEC_2_BIT 8
-
-#define TEC_3_PORT 1
-#define TEC_3_PIN 2
-#define TEC_3_FUNC SCU_MODE_FUNC0
-#define TEC_3_GPIO 0
-#define TEC_3_BIT 9
-
-#define TEC_4_PORT 1
-#define TEC_4_PIN 6
-#define TEC_4_FUNC SCU_MODE_FUNC0
-#define TEC_4_GPIO 1
-#define TEC_4_BIT 9
+#define REFRESH_TIME 1000			   //! Cuenta del Systick
+#define SNOOZE_TIME 5				   //! Tiempo que se posterga la alarma
+#define TIME_TO_SET 3000			   //! Tiempo que se pulsa el boton
+#define TIME_TO_CLEAN TIME_TO_SET * 10 //! Tiempo para reiniciar el estado
 
 /* === Private data type declarations ========================================================== */
+
+typedef enum {
+	HORA_SIN_CONFIGURAR,
+	MOSTRANDO_HORA,
+	AJUSTANDO_MINUTOS_ACTUAL,
+	AJUSTANDO_HORAS_ACTUAL,
+	AJUSTANDO_MINUTOS_ALARMA,
+	AJUSTANDO_HORAS_ALARMA,
+} modo_t;
 
 /* === Private variable declarations =========================================================== */
 
 /* === Private function declarations =========================================================== */
 
+void SisTick_Init(uint32_t time);
+
 /* === Public variable definitions ============================================================= */
+
+static board_t board;
+static clock_t reloj;
+static modo_t modo;
 
 /* === Private variable definitions ============================================================ */
 
+static const uint8_t LIMITE_MINUTOS[] = {5, 9};
+static const uint8_t LIMITE_HORAS[] = {2, 3};
+
+// static bool set_config = 0;
+static uint16_t contador_set_config = TIME_TO_SET;
+static uint16_t tiempo_muerto = TIME_TO_CLEAN;
+
 /* === Private function implementation ========================================================= */
 
-/* === Public function implementation ========================================================= */
+/**
+ * @brief Funcion para contar el tiempo de boton presionado
+ *
+ * @param button_state estado del boton que se lee
+ * @param max_count tiempo limite de cuenta
+ */
+void CounterSetRefresh(bool button_state, uint16_t max_count) {
+	if (button_state == 1) {
+		if (contador_set_config > 0)
+			contador_set_config -= 1;
+	} else {
+		contador_set_config = max_count;
+		if (tiempo_muerto > 0)
+			tiempo_muerto -= 1;
+	}
+}
+
+/* === Public function implementation ========================================================== */
+
+void SwitchMode(modo_t valor) {
+	modo = valor;
+	switch (modo) {
+	case HORA_SIN_CONFIGURAR:
+		DisplayFlashDigits(board->display, 0, 3, 200);
+		break;
+	case MOSTRANDO_HORA:
+		DisplayFlashDigits(board->display, 0, 0, 0);
+		break;
+	case AJUSTANDO_MINUTOS_ACTUAL:
+		DisplayFlashDigits(board->display, 2, 3, 100);
+		break;
+	case AJUSTANDO_HORAS_ACTUAL:
+		DisplayFlashDigits(board->display, 0, 1, 100);
+		break;
+	case AJUSTANDO_MINUTOS_ALARMA:
+		DisplayFlashDigits(board->display, 2, 3, 50);
+		break;
+	case AJUSTANDO_HORAS_ALARMA:
+		DisplayFlashDigits(board->display, 0, 1, 50);
+		break;
+	default:
+		break;
+	}
+}
+
+void IncrementBCD(uint8_t numero[2], const uint8_t limite[2]) {
+	numero[1]++;
+
+	if (numero[1] > limite[1] && numero[0] >= limite[0]) {
+		numero[1] = 0;
+		numero[0] = 0;
+	}
+
+	if (numero[1] > 9) {
+		numero[1] = 0;
+		numero[0]++;
+	}
+}
+
+void DecrementBCD(uint8_t numero[2], const uint8_t limite[2]) {
+	numero[1]--;
+
+	if (numero[1] > 9) {
+		numero[1] = 9;
+		if (numero[0] > 0)
+			numero[0]--;
+		else {
+			numero[0] = limite[0];
+			numero[1] = limite[1];
+		}
+	}
+}
+
+void TriggerAbstraction(clock_t clock) {
+	if (IsAlarmRinging(reloj))
+		DigitalOutputActivate(board->led_RGB_azul);
+	else
+		DigitalOutputDeactivate(board->led_RGB_azul);
+}
 
 int main(void) {
+	uint8_t entrada[ALARM_SIZE];
 
-    int divisor = 0;
-    bool current_state, last_state = false;
+	reloj = ClockCreate(REFRESH_TIME / 60, TriggerAbstraction);
+	board = BoardCreate();
 
-    Chip_SCU_PinMuxSet(LED_R_PORT, LED_R_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_R_FUNC);
-    Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_R_GPIO, LED_R_BIT, false);
-    Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, LED_R_GPIO, LED_R_BIT, true);
+	SisTick_Init(REFRESH_TIME);
+	SwitchMode(HORA_SIN_CONFIGURAR);
 
-    Chip_SCU_PinMuxSet(LED_G_PORT, LED_G_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_G_FUNC);
-    Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_G_GPIO, LED_G_BIT, false);
-    Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, LED_G_GPIO, LED_G_BIT, true);
+	// -- Infinite loop
+	while (true) {
 
-    Chip_SCU_PinMuxSet(LED_B_PORT, LED_B_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_B_FUNC);
-    Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_B_GPIO, LED_B_BIT, false);
-    Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, LED_B_GPIO, LED_B_BIT, true);
+		// -------------------------
 
-    /******************/
-    Chip_SCU_PinMuxSet(LED_1_PORT, LED_1_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_1_FUNC);
-    Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_1_GPIO, LED_1_BIT, false);
-    Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, LED_1_GPIO, LED_1_BIT, true);
+		if (DigitalInputHasActivated(board->accept)) {
+			tiempo_muerto = TIME_TO_CLEAN;
 
-    Chip_SCU_PinMuxSet(LED_2_PORT, LED_2_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_2_FUNC);
-    Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_2_GPIO, LED_2_BIT, false);
-    Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, LED_2_GPIO, LED_2_BIT, true);
+			if (modo == MOSTRANDO_HORA) {
+				if (IsAlarmRinging(reloj))
+					SnoozeAlarm(reloj, SNOOZE_TIME);
+				else if (!AlarmGetTime(reloj, entrada, sizeof(entrada)))
+					ActivateAlarm(reloj);
+			} else if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
+				SwitchMode(AJUSTANDO_HORAS_ACTUAL);
+			} else if (modo == AJUSTANDO_HORAS_ACTUAL) {
+				ClockSetTime(reloj, entrada, sizeof(entrada));
+				SwitchMode(MOSTRANDO_HORA);
+			} else if (modo == AJUSTANDO_MINUTOS_ALARMA) {
+				SwitchMode(AJUSTANDO_HORAS_ALARMA);
+			} else if (modo == AJUSTANDO_HORAS_ALARMA) {
+				AlarmSetTime(reloj, entrada, sizeof(entrada));
+				SwitchMode(MOSTRANDO_HORA);
+			}
+		}
 
-    Chip_SCU_PinMuxSet(LED_3_PORT, LED_3_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_3_FUNC);
-    Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_3_GPIO, LED_3_BIT, false);
-    Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, LED_3_GPIO, LED_3_BIT, true);
+		if (DigitalInputHasActivated(board->cancel)) {
+			tiempo_muerto = TIME_TO_CLEAN;
 
-    /******************/
-    Chip_SCU_PinMuxSet(TEC_1_PORT, TEC_1_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | TEC_1_FUNC);
-    Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, TEC_1_GPIO, TEC_1_BIT, false);
+			if (modo == MOSTRANDO_HORA) {
+				if (AlarmGetTime(reloj, entrada, sizeof(entrada)))
+					DeactivateAlarm(reloj);
+			} else {
+				if (ClockGetTime(reloj, entrada, sizeof(entrada))) {
+					SwitchMode(MOSTRANDO_HORA);
+				} else {
+					SwitchMode(HORA_SIN_CONFIGURAR);
+				}
+			}
+		}
 
-    Chip_SCU_PinMuxSet(TEC_2_PORT, TEC_2_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | TEC_2_FUNC);
-    Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, TEC_2_GPIO, TEC_2_BIT, false);
+		if (DigitalInputRead(board->set_time)) {
+			tiempo_muerto = TIME_TO_CLEAN;
 
-    Chip_SCU_PinMuxSet(TEC_3_PORT, TEC_3_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | TEC_3_FUNC);
-    Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, TEC_3_GPIO, TEC_3_BIT, false);
+			if (contador_set_config == 0) {
+				SwitchMode(AJUSTANDO_MINUTOS_ACTUAL);
+				ClockGetTime(reloj, entrada, sizeof(entrada));
+				DisplayWriteBCD(board->display, entrada, sizeof(entrada));
+			}
+		}
 
-    Chip_SCU_PinMuxSet(TEC_4_PORT, TEC_4_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | TEC_4_FUNC);
-    Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, TEC_4_GPIO, TEC_4_BIT, false);
+		if (DigitalInputRead(board->set_alarm)) {
+			tiempo_muerto = TIME_TO_CLEAN;
 
-    while (true) {
-        if (Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, TEC_1_GPIO, TEC_1_BIT) == 0) {
-            Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_B_GPIO, LED_B_BIT, true);
-        } else {
-            Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_B_GPIO, LED_B_BIT, false);
-        }
+			if (contador_set_config == 0) {
+				SwitchMode(AJUSTANDO_MINUTOS_ALARMA);
+				AlarmGetTime(reloj, entrada, sizeof(entrada));
+				DisplayWriteBCD(board->display, entrada, sizeof(entrada));
+				DisplayToggleDots(board->display, 0, 3);
+			}
+		}
 
-        current_state = (Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, TEC_2_GPIO, TEC_2_BIT) == 0);
-        if ((current_state) && (!last_state)) {
-            Chip_GPIO_SetPinToggle(LPC_GPIO_PORT, LED_1_GPIO, LED_1_BIT);
-        }
-        last_state = current_state;
+		if (DigitalInputHasActivated(board->decrement)) {
+			tiempo_muerto = TIME_TO_CLEAN;
 
-        if (Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, TEC_3_GPIO, TEC_3_BIT) == 0) {
-            Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_2_GPIO, LED_2_BIT, true);
-        }
-        if (Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, TEC_4_GPIO, TEC_4_BIT) == 0) {
-            Chip_GPIO_SetPinState(LPC_GPIO_PORT, LED_2_GPIO, LED_2_BIT, false);
-        }
+			if ((modo == AJUSTANDO_MINUTOS_ACTUAL) || (modo == AJUSTANDO_MINUTOS_ALARMA)) {
+				DecrementBCD(&entrada[2], LIMITE_MINUTOS);
+			} else if ((modo == AJUSTANDO_HORAS_ACTUAL) || (modo == AJUSTANDO_HORAS_ALARMA)) {
+				DecrementBCD(&entrada[0], LIMITE_HORAS);
+			}
 
-        divisor++;
-        if (divisor == 5) {
-            divisor = 0;
-            Chip_GPIO_SetPinToggle(LPC_GPIO_PORT, LED_3_GPIO, LED_3_BIT);
-        }
+			if ((modo == AJUSTANDO_MINUTOS_ACTUAL) || (modo == AJUSTANDO_HORAS_ACTUAL)) {
+				DisplayWriteBCD(board->display, entrada, sizeof(entrada));
+			} else if ((modo == AJUSTANDO_HORAS_ALARMA) || (modo == AJUSTANDO_MINUTOS_ALARMA)) {
+				DisplayWriteBCD(board->display, entrada, sizeof(entrada));
+				DisplayToggleDots(board->display, 0, 3);
+			}
+		}
 
-        for (int index = 0; index < 100; index++) {
-            for (int delay = 0; delay < 25000; delay++) {
-                __asm("NOP");
-            }
-        }
-    }
+		if (DigitalInputHasActivated(board->increment)) {
+			tiempo_muerto = TIME_TO_CLEAN;
+
+			if ((modo == AJUSTANDO_MINUTOS_ACTUAL) || (modo == AJUSTANDO_MINUTOS_ALARMA)) {
+				IncrementBCD(&entrada[2], LIMITE_MINUTOS);
+			} else if ((modo == AJUSTANDO_HORAS_ACTUAL) || (modo == AJUSTANDO_HORAS_ALARMA)) {
+				IncrementBCD(&entrada[0], LIMITE_HORAS);
+			}
+
+			if ((modo == AJUSTANDO_MINUTOS_ACTUAL) || (modo == AJUSTANDO_HORAS_ACTUAL)) {
+				DisplayWriteBCD(board->display, entrada, sizeof(entrada));
+			} else if ((modo == AJUSTANDO_HORAS_ALARMA) || (modo == AJUSTANDO_MINUTOS_ALARMA)) {
+				DisplayWriteBCD(board->display, entrada, sizeof(entrada));
+				DisplayToggleDots(board->display, 0, 3);
+			}
+		}
+
+		// Retardo de tiempo
+		for (int index = 0; index < 100; index++) {
+			for (int delay = 0; delay < 5000; delay++) {
+				__asm("NOP");
+			}
+		}
+	}
 }
+
+void SysTick_Handler(void) {
+	static uint16_t contador = 0;
+	uint8_t hora[CLOCK_SIZE];
+
+	DisplayRefresh(board->display);
+	ClockRefresh(reloj, CLOCK_SIZE);
+
+	contador = (contador + 1) % 1000;
+	CounterSetRefresh(DigitalInputRead(board->set_time) || DigitalInputRead(board->set_alarm), TIME_TO_SET);
+
+	if (modo <= MOSTRANDO_HORA) {
+		ClockGetTime(reloj, hora, CLOCK_SIZE);
+		DisplayWriteBCD(board->display, hora, CLOCK_SIZE);
+
+		if (contador > 500)
+			DisplayToggleDots(board->display, 1, 1);
+
+		if (AlarmGetTime(reloj, hora, sizeof(hora)))
+			DisplayToggleDots(board->display, 3, 3);
+	} else {
+		if (tiempo_muerto == 0) {
+			SwitchMode(HORA_SIN_CONFIGURAR);
+		}
+	}
+}
+
+// genero pruebas por error en git graph
 
 /* === End of documentation ==================================================================== */
 
