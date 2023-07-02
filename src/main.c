@@ -4,6 +4,7 @@
  * http://www.microprocesadores.unt.edu.ar/
  * Copyright 2022, Esteban Volentini <evolentini@herrera.unt.edu.ar>
  * Modificacion Joel Jassan
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -306,6 +307,8 @@ void SysTick_Handler(void) {
 		}
 	}
 }
+
+// genero pruebas por error en git graph
 
 /* === End of documentation ==================================================================== */
 
