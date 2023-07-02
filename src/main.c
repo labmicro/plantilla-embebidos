@@ -48,6 +48,7 @@
 /* === Macros definitions * ==================================================================== */
 
 #define REFRESH_TIME 1000
+#define SNOOZE_TIME 5
 
 /* === Private data type declarations ========================================================== */
 
@@ -77,9 +78,20 @@ static modo_t modo;
 static const uint8_t LIMITE_MINUTOS[] = {5, 9};
 static const uint8_t LIMITE_HORAS[] = {2, 3};
 
+static bool set_config = 0;
+static uint16_t contador_set_config = 1;
+
 /* === Private function implementation ========================================================= */
 
 /* === Public function implementation ========================================================== */
+
+void CounterSetRefresh(bool button_state, uint16_t count) {
+	if (button_state == 1) {
+		if (contador_set_config != 0 || contador_set_config > count)
+			contador_set_config = (contador_set_config + 1) % count;
+	} else
+		contador_set_config = 1;
+}
 
 void SwitchMode(modo_t valor) {
 	modo = valor;
@@ -145,7 +157,7 @@ void TriggerAbstraction(clock_t clock) {
 int main(void) {
 	uint8_t entrada[ALARM_SIZE];
 
-	reloj = ClockCreate(REFRESH_TIME / 10, TriggerAbstraction);
+	reloj = ClockCreate(REFRESH_TIME / 60, TriggerAbstraction);
 	board = BoardCreate();
 
 	SisTick_Init(REFRESH_TIME);
@@ -159,7 +171,7 @@ int main(void) {
 		if (DigitalInputHasActivated(board->accept)) {
 			if (modo == MOSTRANDO_HORA) {
 				if (IsAlarmRinging(reloj))
-					PostponeAlarm(reloj);
+					SnoozeAlarm(reloj, SNOOZE_TIME);
 				else if (!AlarmGetTime(reloj, entrada, sizeof(entrada)))
 					ActivateAlarm(reloj);
 			} else if (modo == AJUSTANDO_MINUTOS_ACTUAL) {
@@ -189,9 +201,16 @@ int main(void) {
 		}
 
 		if (DigitalInputHasActivated(board->set_time)) {
+			set_config = 1;
+			// if (contador_set_config == 0) {
 			SwitchMode(AJUSTANDO_MINUTOS_ACTUAL);
 			ClockGetTime(reloj, entrada, sizeof(entrada));
 			DisplayWriteBCD(board->display, entrada, sizeof(entrada));
+			//}
+		}
+
+		if (DigitalInputHasDeactivated(board->set_time)) {
+			set_config = 0;
 		}
 
 		if (DigitalInputHasActivated(board->set_alarm)) {
@@ -248,6 +267,8 @@ void SysTick_Handler(void) {
 	ClockRefresh(reloj, CLOCK_SIZE);
 
 	contador = (contador + 1) % 1000;
+
+	CounterSetRefresh(set_config, 3000);
 
 	if (modo <= MOSTRANDO_HORA) {
 		ClockGetTime(reloj, hora, CLOCK_SIZE);
